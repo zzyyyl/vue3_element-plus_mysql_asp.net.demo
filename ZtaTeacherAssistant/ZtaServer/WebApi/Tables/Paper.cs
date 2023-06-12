@@ -1,4 +1,4 @@
-namespace WebApi
+namespace WebApi.Tables
 {
     /*
    pid                  int not null  comment '',
