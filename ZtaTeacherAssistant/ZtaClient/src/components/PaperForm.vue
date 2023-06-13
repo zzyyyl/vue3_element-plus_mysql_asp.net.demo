@@ -1,19 +1,14 @@
 <script lang="ts">
 import axios from 'axios'
-import PaperItem from './PaperItem.vue'
+import PaperItem from './items/PaperItem.vue'
 
 export default {
-  name: 'App',
   components: {
     PaperItem
-  },
+},
   props: {},
   data() {
     return {
-      models: {
-        paper: '/paper',
-        teacher: '/teacher'
-      },
       paper_params: {
         pid: null,
         pname: null,
@@ -22,13 +17,12 @@ export default {
         ptype: null,
         level: null
       },
+      papers: [],
     }
   },
-  emits: [ 'data' ],
   methods: {
     getPaper() {
       // get /api/paper
-      ;
       axios.get('/api/paper', {
         params: {
           pid: this.paper_params.pid ? this.paper_params.pid : null,
@@ -40,7 +34,7 @@ export default {
         },
       }).then((res: any) => {
         console.log(res.data)
-        this.$emit(res.data)
+        this.papers = res.data
       }).catch((err: any) => {
         console.log(err)
       })
@@ -50,41 +44,67 @@ export default {
 
 </script>
 
-<template><form v-on:submit.prevent="getPaper">
-    <div style="float: right; width: 45%">
-        <label for="pid">论文编号</label><br/>
+<template>
+  <div class='blocktitle thick'>论文查询</div>
+  <div class='blocktext Plaintext'>
+    <form v-on:submit.prevent="getPaper">
+      <div style="float: right; width: 20%; text-align: center;">
+        <br/><br/>
+        <button>&nbsp;检索&nbsp;</button>
+      </div>
+      <div style="width: 80%; text-align: center;">
+        <label for="pyear">论文年份</label>&nbsp;
         <input
-        v-model="paper_params.pid"
-        id="pid"
-        placeholder="pid" /><br/>
-        <label for="pid">论文名</label><br/>
+          style="width: 30%"
+          v-model="paper_params.pyear"
+          id="pyear"
+          placeholder="pyear" />&nbsp;
+        <label for="pid">论文类别</label>&nbsp;
         <input
-        v-model="paper_params.pname"
-        id="get-paper"
-        placeholder="pname" /><br/>
-        <label for="pid">论文来源</label><br/>
+          style="width: 30%"
+          v-model="paper_params.ptype"
+          id="ptype"
+          placeholder="ptype" /><br/><br/>
+        <label for="pid">论文编号</label>&nbsp;
         <input
-        v-model="paper_params.psource"
-        id="get-paper"
-        placeholder="psource" /><br/>
-    </div>
-    <div style="width: 45%">
-        <label for="pid">论文年份</label><br/>
+          style="width: 30%"
+          v-model="paper_params.pid"
+          id="pid"
+          placeholder="pid" />&nbsp;
+        <label for="level">论文级别</label>&nbsp;
         <input
-        v-model="paper_params.pyear"
-        id="get-paper"
-        placeholder="pyear" /><br/>
-        <label for="pid">论文类别</label><br/>
+          style="width: 30%"
+          v-model="paper_params.level"
+          id="level"
+          placeholder="level" /><br/><br/>
+        <label for="psource">论文来源</label>&nbsp;
         <input
-        v-model="paper_params.ptype"
-        id="get-paper"
-        placeholder="ptype" /><br/>
-        <label for="pid">论文级别</label><br/>
+          style="width: 30%"
+          v-model="paper_params.psource"
+          id="psource"
+          placeholder="psource" />&nbsp;
+        <label for="pname">论文名称</label>&nbsp;
         <input
-        v-model="paper_params.level"
-        id="get-paper"
-        placeholder="level" /><br/>
-        </div>
-        <br/>
-    <button>查询论文</button>
-</form></template>
+          style="width: 30%"
+          v-model="paper_params.pname"
+          id="pname"
+          placeholder="pname" /><br/>
+      </div>
+    </form>
+  </div>
+  <br/>
+  <div class='blocktitle thick'>查询结果</div>
+  <div class='blocktext Plaintext'><ul><PaperItem
+    v-for="(paper, index) in papers"
+    :pid="paper['pid']"
+    :pname="paper['pname']"
+    :psource="paper['psource']"
+    :pyear="paper['pyear']"
+    :ptype="paper['ptype']"
+    :level="paper['level']"
+    @remove="papers.splice(index, 1)" />
+  </ul></div>
+</template>
+
+<style scoped>
+</style>

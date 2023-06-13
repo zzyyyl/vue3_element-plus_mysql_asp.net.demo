@@ -14,13 +14,13 @@ export default {
 
 <template>
   <li>
-    <div style="float: right;">
+    <div style="float: right; width: 20%; text-align: center;">
     <button @click="$emit('remove')">Remove</button>
     </div>
-    <div>
+    <div style="width: 80%;">
     <pre>
-    编号：{{ pid }}
-    论文名：{{ pname }}
+    论文编号：{{ pid }}
+    论文名称：{{ pname }}
     论文来源：{{ psource }}
     论文年份：{{ pyear }}
     论文类别：{{ ptype }}
