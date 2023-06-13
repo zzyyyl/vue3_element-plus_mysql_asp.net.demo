@@ -1,3 +1,7 @@
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace WebApi.Tables
 {
     /*
@@ -13,6 +17,7 @@ namespace WebApi.Tables
         public int Pid { get; set; }
         public string? Pname { get; set; }
         public string? Psource { get; set; }
+        [Column(TypeName = "Date")]
         public DateTime? Pyear { get; set; }
         public int? Ptype { get; set; }
         public int? Level { get; set; }
