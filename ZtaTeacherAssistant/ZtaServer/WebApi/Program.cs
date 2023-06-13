@@ -162,6 +162,38 @@ app.MapGet("/paper", async (
 });
 #endregion
 
+#region teacher
+app.MapPost("/teacher", async (string tid, string? tname, int? gender, int? title) =>
+{
+    string keys = "tid", values = $"\"{tid}\"";
+    if (tname is not null)
+    {
+        keys += ",tname";
+        values += $",\"{tname}\"";
+    }
+    if (gender is not null)
+    {
+        keys += ",gender";
+        values += $",{gender}";
+    }
+    if (title is not null)
+    {
+        keys += ",title";
+        values += $",{title}";
+    }
+    var sqlQueryStr = $"insert into teacher ({keys}) values ({values})";
+    var sqlCommand = new MySqlCommand(sqlQueryStr, ZTAConn);
+    try
+    {
+        var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
+        return res.Result == 1 ? Results.Ok(res) : Results.BadRequest(res);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new ResultMsg(-1, ex.Message));
+    }
+});
+#endregion
 
 
 app.Run();

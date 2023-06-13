@@ -1,0 +1,53 @@
+@import './bootstrap.css';
+@font-face{font-family:'English Pretty Font';src:url("fonts/Signarita Zhai Rhianne.ttf");}
+@font-face{font-family:'Code Normal Font';src:url("fonts/consola.ttf");}
+@font-face{font-family:'English Normal Font';src:url("fonts/calibri.ttf");}
+body{background-size:cover;background-attachment:fixed;background-color:#cdcecf;overflow-y:scroll;font-family:Lato,-apple-system,'PingFang SC','Source Han Sans SC','Noto Sans CJK SC','Microsoft Yahei','Lantinghei SC','Hiragino Sans GB','Microsoft Sans Serif','WenQuanYi Micro Hei',sans-serif;}
+.EnglishN{font-family:Calibri,'English Normal Font',monospace;}
+.EnglishP{font-family:'English Pretty Font',FRSCRIPT,fantasy;}
+.Code{font-family:'Consolas','Code Normal Font',monospace;}
+.Plaintext{font-family:'Consolas','Code Normal Font',微软雅黑,monospace;}
+.thick{font-weight:bold;}
+nav.maintitle{top:0;left:0;width:100%;min-width:1000px;height:5rem;background-color:#3d3e3f;position:fixed;z-index:9999;font-size:1.2rem;}
+nav.maintitle ul{padding-left:1%;margin-left:1%;display:-ms-flexbox;display:flex;list-style:none;-ms-flex-flow:row nowrap;flex-flow:row nowrap;-ms-flex-pack:start;justify-content:flex-start;}
+nav.maintitle ul li{margin:0.5rem 1rem;color:#f3f4f5;}
+nav.maintitle ul li a{text-decoration:none;color:inherit;display:block;padding-top:1rem;}
+nav.maintitle ul li a:hover{color:#d3d4d5;}
+nav.maintitle ul li span{color:inherit;}
+nav.maintitle ul li.maintitletext{color:#f3f4f5;padding-top:0.5rem;font-size:1.8rem;}
+nav.maintitle ul li.EnglishP.maintitletext span{display:block;padding-top:1rem;}
+div.blocktitle{text-align:center;font-size:2rem;padding:1rem;box-shadow:none;border:1px solid #d4d4d5;background:#f3f4f5;margin-bottom:0;border-radius:5px 5px 0 0;}
+div.blocktext{padding:1.5rem;position:relative;border:1px solid #d4d4d5;border-top:none;overflow-y:hidden;font-size:18px;}
+div.blocktext table{color:black;display:block;font-family:'Code Normal Font';text-align:center;float:none;}
+div.blocktext table th.info{max-width:14rem;}
+div.blocktext table th.id{min-width:5rem;max-width:5rem;}
+div.blocktext table th{min-width:8rem;max-width:8rem;margin:0.5rem 1rem;}
+div.blocktext table td.info{max-width:14rem;color:#737475;}
+div.blocktext table td.id{min-width:5rem;max-width:5rem;color:#737475;}
+div.blocktext table td{min-width:8rem;max-width:8rem;margin:0.5rem 1rem;padding-top:1rem;}
+div.blocktext table tr.expenditure{color:#f30405;}
+div.blocktext table tr.expenditure td.info{color:#f37475;}
+div.blocktext table tr.expenditure td.id{color:#f37475;}
+div.transbox{position:static;margin:6rem 2% 30px;padding:10px 0;background-color:white;filter:alpha(opacity=90);opacity:0.9;z-index:-1;border-radius:10px;min-width:1250px;}
+div.maintext{margin:30px 50px 20px;position:relative;min-height:500px;overflow:hidden;}
+.titletext{color:black;text-decoration:none;font-size:1.5rem;}
+pre{font-family:'Consolas','Code Normal Font',微软雅黑,monospace;font-size:16px;overflow:hidden;}
+pre.text{white-space:pre-wrap;word-wrap:break-word;}
+pre.text pre{text-align:center;font-size:18px;}
+pre.text ol{background-color:#e3e4e5;border-radius:5px;font-family:'Code Normal Font',simhei,monospace;display:inline-table;white-space:pre-line;}
+span.cpyrt{float:right;color:#737475;font-size:1rem;}
+span.ptid{float:right;color:#737475;font-family:'Code Normal Font';font-size:1rem;}
+span.writetime{color:#737475;font-family:'Code Normal Font';font-size:18px;}
+span.authorname{float:right;color:purple;text-align:right;font-family:'English Pretty Font';font-size:24px;}
+div.footstyle{margin-top:-1em;margin-left:2em;margin-right:2em;margin-bottom:1em;}
+div.sidebar{float:right;position:relative;margin-top:1rem;width:31.25%;padding:0 1rem 1rem;}
+div.mainbar{position:relative;width:68.75%;padding:1rem;min-width:650px;}
+div.pagebuttons{padding:0.5em;margin:0 auto;text-align:center;}
+div.hitokoto{font-size:16px;text-align:center;}
+span.menutext{position:absolute;top:75px;left:60px;z-index:9999;}
+span.menutext a{text-decoration:none;color:black;font-size:12px;font-family:'Code Normal Font';}
+span.menutext a:hover{text-decoration:none;color:#4f5f4f;}
+input.pageinput{font-family:'Code Normal Font';text-align:center;resize:none;width:4rem;height:2.5rem;border-radius:2px;border:1px solid gray;font-size:14px;}
+button.pageinput{text-align:center;resize:none;width:4rem;height:2.5rem;}
+input {font-family:'Code Normal Font';text-align:center;resize:none;min-width:4rem;height:2rem;border-radius:2px;border:1px solid gray;font-size:14px;}
+button{text-align:center;resize:none;padding: 0 1rem;height:2.5rem;border-radius:5px;border:1px solid gray;}
