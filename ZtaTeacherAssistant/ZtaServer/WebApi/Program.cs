@@ -151,7 +151,7 @@ app.MapGet("/paper", async (
                 Pid = reader.GetInt32("pid"),
                 Pname = reader.GetValue("pname") as string,
                 Psource = reader.GetValue("psource") as string,
-                Pyear = reader.GetValue("pyear") as DateTime?,
+                Pyear = (reader.GetValue("pyear") as DateTime?)?.ToString("yyyy-MM-dd"),
                 Ptype = reader.GetValue("ptype") as int?,
                 Level = reader.GetValue("level") as int?,
             });
