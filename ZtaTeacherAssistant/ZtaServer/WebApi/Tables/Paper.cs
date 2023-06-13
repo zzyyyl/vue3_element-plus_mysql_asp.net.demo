@@ -17,7 +17,6 @@ namespace WebApi.Tables
         public int Pid { get; set; }
         public string? Pname { get; set; }
         public string? Psource { get; set; }
-        [Column(TypeName = "DateTime")]
         public string? Pyear { get; set; }
         public int? Ptype { get; set; }
         public int? Level { get; set; }
