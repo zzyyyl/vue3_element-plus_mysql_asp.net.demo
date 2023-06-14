@@ -15,7 +15,7 @@ export default {
 <template>
   <li>
     <div style="float: right; width: 20%; text-align: center;">
-    <el-button plain type="danger" @click="$emit('remove')">Remove</el-button>
+    <el-button plain type="danger" @click="$emit('remove')">删 除</el-button>
     </div>
     <div style="width: 80%;">
     <pre>
@@ -29,3 +29,7 @@ export default {
     </div>
   </li>
 </template>
+
+<style scoped>
+button{width: 5rem;height: 2.5rem;margin:.4rem 1rem}
+</style>

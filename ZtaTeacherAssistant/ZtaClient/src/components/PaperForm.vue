@@ -3,7 +3,7 @@ import axios from 'axios'
 import PaperItem from './items/PaperItem.vue'
 
 interface ipaper_params {
-  pid: number | null,
+  pid: number | string | null,
   pname: string | null,
   psource: string | null,
   pyear: string | null,
@@ -11,6 +11,11 @@ interface ipaper_params {
   level: string | null
 }
 interface iData {
+  remove_dialog_visiable: boolean,
+  remove_paper_index: number | null,
+  level_options: { value: number | null, label: string }[],
+  ptype_options: { value: number | null, label: string }[],
+  paper_params_rules: any,
   submit: CallableFunction | null,
   paper_params: ipaper_params,
   papers: ipaper_params[]
@@ -19,10 +24,29 @@ interface iData {
 export default {
   components: {
     PaperItem
-},
+  },
   props: {},
   data() : iData {
     return {
+      remove_dialog_visiable: false,
+      remove_paper_index: null,
+      level_options: [
+        { value: 0, label: '任意' },
+        { value: 1, label: 'CCF-A' },
+        { value: 2, label: 'CCF-B' },
+        { value: 3, label: 'CCF-C' },
+        { value: 4, label: '中文 CCF-A' },
+        { value: 5, label: '中文 CCF-B' },
+        { value: 6, label: '无级别' }
+      ],
+      ptype_options: [
+        { value: 0, label: '任意' },
+        { value: 1, label: 'full paper' },
+        { value: 2, label: 'short paper' },
+        { value: 3, label: 'poster paper' },
+        { value: 4, label: 'demopaper' }
+      ],
+      paper_params_rules: {},
       submit: null,
       paper_params: {
         pid: null,
@@ -98,6 +122,16 @@ export default {
       })
     },
     removePaper(index: number) {
+      this.remove_paper_index = index
+      this.remove_dialog_visiable = true
+    },
+    confirmRemovePaper() {
+      let index = this.remove_paper_index
+      this.remove_paper_index = null
+      if (index === null) {
+        alert('请选择要删除的论文')
+        return
+      }
       let pid = this.papers[index].pid
       this.papers.splice(index, 1)
       // delete /api/paper
@@ -112,9 +146,42 @@ export default {
         alert(err.response.data.msg ? err.response.data.msg : err)
       })
     },
-    submitForm() {
-      this.submit ? this.submit() : null
-      this.submit = null
+    async beforeSubmitForm(form_ref: any, callback: CallableFunction) {
+      try {
+        await form_ref.validate()
+      } catch (err) {
+        return
+      }
+      callback()
+    },
+    close_remove_dialog() {
+      this.remove_dialog_visiable = false
+    }
+  },
+  mounted() {
+    this.paper_params_rules = {
+      pid: [
+        { validator: (rule: any, value: any, callback: CallableFunction) => {
+          if (value === null || value === undefined || value === '') {
+            callback()
+          } else if (value >= 0 && value < 2147483647) {
+            callback()
+          } else {
+            callback(new Error('请输入正确的论文编号'))
+          }
+        }, trigger: 'change' }
+      ],
+      pyear: [
+        { validator: (rule: any, value: any, callback: CallableFunction) => {
+          if (value === null || value === undefined || value === '') {
+            callback()
+          } else if (Date.parse(value) < Date.now()) {
+            callback()
+          } else {
+            callback(new Error('日期须在今天以前'))
+          }
+        }, trigger: 'change' }
+      ],
     }
   }
 }
@@ -122,75 +189,92 @@ export default {
 </script>
 
 <template>
+  <!--确认对话框-->
+  <el-dialog
+    title="确认删除"
+    v-model="remove_dialog_visiable"
+    width="30%"
+    :show-close="false">
+    <div style="display: block; text-align: center;">
+    <span>是否确认删除该论文？</span><br /><br />
+    <span class="dialog-footer">
+      <el-button type="info" style="margin:.4rem 2rem" @click="close_remove_dialog">取 消</el-button>
+      <el-button type="danger" style="margin:.4rem 2rem" @click="{confirmRemovePaper(); close_remove_dialog()}">确 定</el-button>
+    </span>
+    </div>
+  </el-dialog>    
   <div class='blocktitle thick'>论文查询</div>
   <div class='blocktext Plaintext'>
-    <form v-on:submit.prevent="submitForm">
+    <el-form
+      ref="paper_params"
+      :model="paper_params"
+      :rules="paper_params_rules"
+      label-width="10rem">
       <div style="float: right; width: 20%; text-align: center;">
-        <button @click="submit = getPaper" style="margin: .4rem">&nbsp;检索&nbsp;</button><br/>
-        <button @click="submit = postPaper" style="margin: .4rem">&nbsp;登记&nbsp;</button><br/>
-        <button @click="submit = putPaper" style="margin: .4rem">&nbsp;修改&nbsp;</button>
+        <el-button @click="beforeSubmitForm($refs['paper_params'], getPaper)">检 索</el-button><br/>
+        <el-button @click="beforeSubmitForm($refs['paper_params'], postPaper)">登 记</el-button><br/>
+        <el-button @click="beforeSubmitForm($refs['paper_params'], putPaper)">修 改</el-button><br/>
+        <el-button type="danger" plain @click="$refs['paper_params'].resetFields()">清 空</el-button><br/>
       </div>
       <div style="width: 80%; text-align: center;">
-        <label for="pid">论文编号</label>&nbsp;
-        <!--限定非负整数-->
-        <el-input-number
-          class="inputli"
-          :min=0
-          :max=2147483647
-          v-model="paper_params.pid"
-          id="pid"
-          placeholder="pid" />&nbsp;
-        <label for="ptype">论文类型</label>&nbsp;
-        <select
-          class="inputli"
-          v-model="paper_params.ptype"
-          id="ptype"
-          placeholder="ptype" >
-          <option :value="null"></option>
-          <option value="1">full paper</option>
-          <option value="2">short paper</option>
-          <option value="3">poster paper</option>
-          <option value="4">demopaper</option>
-        </select><br/><br/>
-        <label for="pname">论文名称</label>&nbsp;
-        <input
-          class="inputli"
-          v-model="paper_params.pname"
-          id="pname"
-          placeholder="pname" />&nbsp;
-        <label for="level">论文级别</label>&nbsp;
-        <select
-          class="inputli"
-          v-model="paper_params.level"
-          id="level"
-          placeholder="level" >
-          <option :value="null"></option>
-          <option value="1">CCF-A</option>
-          <option value="2">CCF-B</option>
-          <option value="3">CCF-C</option>
-          <option value="4">中文 CCF-A</option>
-          <option value="5">中文 CCF-B</option>
-          <option value="6">无级别</option>
-        </select><br/><br/>
-        <label for="psource">论文来源</label>&nbsp;
-        <input
-          class="inputli"
-          v-model="paper_params.psource"
-          id="psource"
-          placeholder="psource" />&nbsp;
-        <label for="pyear">论文年份</label>&nbsp;
-        <input
-          class="inputli"
-          v-model="paper_params.pyear"
-          id="pyear"
-          placeholder="pyear" /><br/>
+        <el-form-item label="论文编号" prop="pid">
+          <el-input
+            class="inputli"
+            @blur="() => { if (paper_params.pid === '') paper_params.pid = null }"
+            type="number"
+            v-model.number="paper_params.pid"
+            id="pid" />
+        </el-form-item>
+        <el-form-item label="论文类型" prop="ptype">
+          <el-select
+            class="inputli"
+            v-model="paper_params.ptype"
+            id="ptype" >
+            <el-option
+              v-for="item in ptype_options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="论文名称" prop="pname">
+          <el-input
+            class="inputli"
+            v-model="paper_params.pname"
+            id="pname" />
+        </el-form-item>
+        <el-form-item label="论文级别" prop="level">
+          <el-select
+            class="inputli"
+            v-model="paper_params.level"
+            id="level" >
+            <el-option
+              v-for="item in level_options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="论文来源" prop="psource">
+          <el-input
+            class="inputli"
+            v-model="paper_params.psource"
+            id="psource" />
+        </el-form-item>
+        <el-form-item label="论文年份" prop="pyear">
+          <el-input
+            class="inputli"
+            v-model="paper_params.pyear"
+            id="pyear" />
+        </el-form-item>
       </div>
-    </form>
+    </el-form>
   </div>
   <br/>
   <div class='blocktitle thick'>查询结果</div>
-  <div class='blocktext Plaintext'><ul><PaperItem
+  <div class='blocktext Plaintext'><ul><paper-item
     v-for="(paper, index) in papers"
+    :key="index"
     :pid="paper['pid']"
     :pname="paper['pname']"
     :psource="paper['psource']"
@@ -202,6 +286,6 @@ export default {
 </template>
 
 <style scoped>
-.inputli{width: 30%}
-button{width: 6rem;height: 2.5rem;margin:.4rem}
+.inputli{width: 90%;border: 0;}
+button{width: 5rem;height: 2.5rem;margin:.4rem}
 </style>

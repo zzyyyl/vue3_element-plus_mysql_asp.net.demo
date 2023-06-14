@@ -1,12 +1,12 @@
 <script lang="ts">
 import PaperForm from './components/PaperForm.vue'
-import Hitokoto from './components/Hitokoto.vue'
+import HitokotoItem from './components/HitokotoItem.vue'
 
 export default {
   name: 'App',
   components: {
     PaperForm,
-    Hitokoto
+    HitokotoItem
 },
   props: {},
   data() {
@@ -31,13 +31,13 @@ export default {
 <template>
   <nav class='maintitle'><ul>
     <li class='EnglishP thick maintitletext'><a href='/'>ZTA</a></li>
-    <li v-for="(value, key) in models" class="Code">
+    <li v-for="(value, key) in models" :key="key" class="Code">
       <a :href="value">{{ key }}</a>
     </li>
 	</ul></nav>
   <div class="transbox">
-    <div class="sidebar"><Hitokoto /></div>
-    <div class="mainbar"><PaperForm /></div>
+    <div class="sidebar"><hitokoto-item /></div>
+    <div class="mainbar"><paper-form /></div>
   </div>
 </template>
 
