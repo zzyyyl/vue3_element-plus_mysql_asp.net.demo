@@ -6,7 +6,7 @@ interface ipaper_params {
   pid: number | null,
   pname: string | null,
   psource: string | null,
-  pyear: number | null,
+  pyear: string | null,
   ptype: string | null,
   level: string | null
 }
@@ -37,15 +37,16 @@ export default {
   },
   methods: {
     getPaper() {
+      console.log(this.paper_params)
       // get /api/paper
       axios.get('/api/paper', {
         params: {
-          pid: this.paper_params.pid ? this.paper_params.pid : null,
-          pname: this.paper_params.pname ? this.paper_params.pname : null,
-          psource: this.paper_params.psource ? this.paper_params.psource : null,
-          pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
-          ptype: this.paper_params.ptype ? this.paper_params.ptype : null,
-          level: this.paper_params.level ? this.paper_params.level : null
+          pid: this.paper_params.pid ?? null,
+          pname: this.paper_params.pname || null,
+          psource: this.paper_params.psource || null,
+          pyear: this.paper_params.pyear || null,
+          ptype: this.paper_params.ptype || null,
+          level: this.paper_params.level || null
         },
       }).then((res: any) => {
         console.log(res.data)
@@ -61,15 +62,15 @@ export default {
       }
       // post /api/paper
       axios.post('/api/paper', {
-        pid: this.paper_params.pid ? this.paper_params.pid : null,
-        pname: this.paper_params.pname ? this.paper_params.pname : null,
-        psource: this.paper_params.psource ? this.paper_params.psource : null,
-        pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
-        ptype: this.paper_params.ptype ? this.paper_params.ptype : null,
-        level: this.paper_params.level ? this.paper_params.level : null
+        pid: this.paper_params.pid ?? null,
+        pname: this.paper_params.pname || null,
+        psource: this.paper_params.psource || null,
+        pyear: this.paper_params.pyear || null,
+        ptype: this.paper_params.ptype || null,
+        level: this.paper_params.level || null
       }).then((res: any) => {
         console.log(res.data)
-        // this.papers = [ this.paper_params ]
+        this.papers = [ JSON.parse(JSON.stringify(this.paper_params)) ]
       }).catch((err: any) => {
         console.log(err)
         alert(err.response.data.msg ? err.response.data.msg : err)
@@ -82,15 +83,30 @@ export default {
       }
       // put /api/paper
       axios.put('/api/paper', {
-        pid: this.paper_params.pid ? this.paper_params.pid : null,
-        pname: this.paper_params.pname ? this.paper_params.pname : null,
-        psource: this.paper_params.psource ? this.paper_params.psource : null,
-        pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
-        ptype: this.paper_params.ptype ? this.paper_params.ptype : null,
-        level: this.paper_params.level ? this.paper_params.level : null
+        pid: this.paper_params.pid ?? null,
+        pname: this.paper_params.pname || null,
+        psource: this.paper_params.psource || null,
+        pyear: this.paper_params.pyear || null,
+        ptype: this.paper_params.ptype || null,
+        level: this.paper_params.level || null
       }).then((res: any) => {
         console.log(res.data)
-        this.papers = res.data
+        this.papers = [ JSON.parse(JSON.stringify(this.paper_params)) ]
+      }).catch((err: any) => {
+        console.log(err)
+        alert(err.response.data.msg ? err.response.data.msg : err)
+      })
+    },
+    removePaper(index: number) {
+      let pid = this.papers[index].pid
+      this.papers.splice(index, 1)
+      // delete /api/paper
+      axios.delete('/api/paper', {
+        params: {
+          pid: pid
+        },
+      }).then((res: any) => {
+        console.log(res.data)
       }).catch((err: any) => {
         console.log(err)
         alert(err.response.data.msg ? err.response.data.msg : err)
@@ -117,11 +133,10 @@ export default {
       <div style="width: 80%; text-align: center;">
         <label for="pid">论文编号</label>&nbsp;
         <!--限定非负整数-->
-        <input
+        <el-input-number
           class="inputli"
-          type="number"
-          min=0
-          max=2147483647
+          :min=0
+          :max=2147483647
           v-model="paper_params.pid"
           id="pid"
           placeholder="pid" />&nbsp;
@@ -182,7 +197,7 @@ export default {
     :pyear="paper['pyear']"
     :ptype="paper['ptype']"
     :level="paper['level']"
-    @remove="papers.splice(index, 1)" />
+    @remove="removePaper(index)" />
   </ul></div>
 </template>
 

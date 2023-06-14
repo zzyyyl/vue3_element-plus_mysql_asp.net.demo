@@ -15,7 +15,7 @@ export default {
 <template>
   <li>
     <div style="float: right; width: 20%; text-align: center;">
-    <button @click="$emit('remove')">Remove</button>
+    <el-button plain type="danger" @click="$emit('remove')">Remove</el-button>
     </div>
     <div style="width: 80%;">
     <pre>
