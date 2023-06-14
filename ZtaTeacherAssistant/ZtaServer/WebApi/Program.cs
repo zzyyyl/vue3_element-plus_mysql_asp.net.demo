@@ -84,7 +84,7 @@ app.MapPost("/paper", async ([FromBody]Paper paper) =>
     try
     {
         var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
-        return res.Result == 1 ? Results.Ok(res) : Results.BadRequest(res);
+        return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
     }
     catch (Exception ex)
     {
@@ -101,8 +101,8 @@ app.MapDelete("/paper", async (int pid) =>
     sqlCommand.Parameters.Add(para_pid);
     sqlCommand.Parameters.Add(para_out);
     var exec_errno = await sqlCommand.ExecuteNonQueryAsync();
-    var res = new ResultMsg(Convert.ToInt32(para_out.Value), "");
-    return res.Result == 1 ? Results.Ok(res) : Results.BadRequest(res);
+    var res = new ResultMsg(Convert.ToInt32(para_out.Value) == 0 ? exec_errno : -1, "");
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
 });
 app.MapPut("/paper", async ([FromBody] Paper paper) =>
 {
@@ -129,7 +129,7 @@ app.MapPut("/paper", async ([FromBody] Paper paper) =>
         try
         {
             var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
-            return res.Result == 1 ? Results.Ok(res) : Results.BadRequest(res);
+            return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
         }
         catch (Exception ex)
         {
