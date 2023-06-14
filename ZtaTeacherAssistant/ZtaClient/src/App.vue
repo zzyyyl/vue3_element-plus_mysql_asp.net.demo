@@ -1,12 +1,12 @@
 <script lang="ts">
-import PaperForm from './components/PaperForm.vue'
-import HitokotoItem from './components/HitokotoItem.vue'
+import PaperBlock from './components/blocks/PaperBlock.vue'
+import HitokotoBlock from './components/blocks/HitokotoBlock.vue'
 
 export default {
   name: 'App',
   components: {
-    PaperForm,
-    HitokotoItem
+    PaperBlock,
+    HitokotoBlock
 },
   props: {},
   data() {
@@ -36,8 +36,8 @@ export default {
     </li>
 	</ul></nav>
   <div class="transbox">
-    <div class="sidebar"><hitokoto-item /></div>
-    <div class="mainbar"><paper-form /></div>
+    <div class="sidebar"><hitokoto-block /></div>
+    <div class="mainbar"><paper-block /></div>
   </div>
 </template>
 

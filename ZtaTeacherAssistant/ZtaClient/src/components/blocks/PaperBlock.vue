@@ -1,6 +1,6 @@
 <script lang="ts">
 import axios from 'axios'
-import PaperItem from './items/PaperItem.vue'
+import PaperItem from '../items/PaperItem.vue'
 
 interface ipaper_params {
   pid: number | string | null,
