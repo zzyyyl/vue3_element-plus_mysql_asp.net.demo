@@ -1,8 +1,12 @@
 <script lang="ts">
 import axios from 'axios'
 import PaperItem from '../items/PaperItem.vue'
+import { ref } from 'vue'
+import { ElForm } from 'element-plus'
 
-interface ipaper_params {
+type ElFormCtx = InstanceType<typeof ElForm>
+
+interface iPaperParams {
   pid: number | string | null,
   pname: string | null,
   psource: string | null,
@@ -17,8 +21,8 @@ interface iData {
   ptype_options: { value: number | null, label: string }[],
   paper_params_rules: any,
   submit: CallableFunction | null,
-  paper_params: ipaper_params,
-  papers: ipaper_params[]
+  paper_params: iPaperParams,
+  papers: iPaperParams[]
 }
 
 export default {
@@ -146,9 +150,9 @@ export default {
         alert(err.response.data.msg ? err.response.data.msg : err)
       })
     },
-    async beforeSubmitForm(form_ref: any, callback: CallableFunction) {
+    async beforeSubmitForm(paper_form_ref: any, callback: CallableFunction) {
       try {
-        await form_ref.validate()
+        await paper_form_ref.validate()
       } catch (err) {
         return
       }
@@ -156,6 +160,12 @@ export default {
     },
     close_remove_dialog() {
       this.remove_dialog_visiable = false
+    }
+  },
+  setup() {
+    const paper_form_ref = ref<ElFormCtx>()
+    return {
+      paper_form_ref
     }
   },
   mounted() {
@@ -193,31 +203,37 @@ export default {
   <el-dialog
     title="确认删除"
     v-model="remove_dialog_visiable"
-    width="30%"
+    width="30rem"
     :show-close="false">
     <div style="display: block; text-align: center;">
     <span>是否确认删除该论文？</span><br /><br />
-    <span class="dialog-footer">
+    <span class="dialog-footer" style="width: 30%;">
       <el-button type="info" style="margin:.4rem 2rem" @click="close_remove_dialog">取 消</el-button>
       <el-button type="danger" style="margin:.4rem 2rem" @click="{confirmRemovePaper(); close_remove_dialog()}">确 定</el-button>
     </span>
     </div>
-  </el-dialog>    
+  </el-dialog>
   <div class='blocktitle thick'>论文查询</div>
   <div class='blocktext Plaintext'>
     <el-form
-      ref="paper_params"
+      ref="paper_form_ref"
       :model="paper_params"
       :rules="paper_params_rules"
-      label-width="10rem">
+      label-width="8rem">
       <div style="float: right; width: 20%; text-align: center;">
-        <el-button @click="beforeSubmitForm($refs['paper_params'], getPaper)">检 索</el-button><br/>
-        <el-button @click="beforeSubmitForm($refs['paper_params'], postPaper)">登 记</el-button><br/>
-        <el-button @click="beforeSubmitForm($refs['paper_params'], putPaper)">修 改</el-button><br/>
-        <el-button type="danger" plain @click="$refs['paper_params'].resetFields()">清 空</el-button><br/>
+        <el-button @click="beforeSubmitForm(paper_form_ref, getPaper)">检 索</el-button>
+        <br/>
+        <br/>
+        <el-button @click="beforeSubmitForm(paper_form_ref, postPaper)">登 记</el-button>
+        <br/>
+        <br/>
+        <el-button @click="beforeSubmitForm(paper_form_ref, putPaper)">修 改</el-button>
+        <br/>
+        <br/>
+        <el-button type="danger" plain @click="paper_form_ref.resetFields()">清 空</el-button>
       </div>
       <div style="width: 80%; text-align: center;">
-        <el-form-item label="论文编号" prop="pid">
+        <el-form-item label="论文编号&nbsp;" prop="pid">
           <el-input
             class="inputli"
             @blur="() => { if (paper_params.pid === '') paper_params.pid = null }"
@@ -225,7 +241,13 @@ export default {
             v-model.number="paper_params.pid"
             id="pid" />
         </el-form-item>
-        <el-form-item label="论文类型" prop="ptype">
+        <el-form-item label="论文名称&nbsp;" prop="pname">
+          <el-input
+            class="inputli"
+            v-model="paper_params.pname"
+            id="pname" />
+        </el-form-item>
+        <el-form-item label="论文类型&nbsp;" prop="ptype">
           <el-select
             class="inputli"
             v-model="paper_params.ptype"
@@ -237,13 +259,7 @@ export default {
               :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="论文名称" prop="pname">
-          <el-input
-            class="inputli"
-            v-model="paper_params.pname"
-            id="pname" />
-        </el-form-item>
-        <el-form-item label="论文级别" prop="level">
+        <el-form-item label="论文级别&nbsp;" prop="level">
           <el-select
             class="inputli"
             v-model="paper_params.level"
@@ -255,13 +271,13 @@ export default {
               :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="论文来源" prop="psource">
+        <el-form-item label="论文来源&nbsp;" prop="psource">
           <el-input
             class="inputli"
             v-model="paper_params.psource"
             id="psource" />
         </el-form-item>
-        <el-form-item label="论文年份" prop="pyear">
+        <el-form-item label="论文年份&nbsp;" prop="pyear">
           <el-input
             class="inputli"
             v-model="paper_params.pyear"
@@ -279,13 +295,13 @@ export default {
     :pname="paper['pname']"
     :psource="paper['psource']"
     :pyear="paper['pyear']"
-    :ptype="paper['ptype']"
-    :level="paper['level']"
+    :ptype="ptype_options.find(ptype => ptype.value === paper['ptype'])?.label"
+    :level="level_options.find(level => level.value === paper['level'])?.label"
     @remove="removePaper(index)" />
   </ul></div>
 </template>
 
 <style scoped>
-.inputli{width: 90%;border: 0;}
-button{width: 5rem;height: 2.5rem;margin:.4rem}
+.inputli{width: 99%;border: 0;}
+button{width: 5rem;height: 2.5rem;margin:.6rem 0}
 </style>
