@@ -2,13 +2,28 @@
 import axios from 'axios'
 import PaperItem from './items/PaperItem.vue'
 
+interface ipaper_params {
+  pid: number | null,
+  pname: string | null,
+  psource: string | null,
+  pyear: number | null,
+  ptype: string | null,
+  level: string | null
+}
+interface iData {
+  submit: CallableFunction | null,
+  paper_params: ipaper_params,
+  papers: ipaper_params[]
+}
+
 export default {
   components: {
     PaperItem
 },
   props: {},
-  data() {
+  data() : iData {
     return {
+      submit: null,
       paper_params: {
         pid: null,
         pname: null,
@@ -25,7 +40,7 @@ export default {
       // get /api/paper
       axios.get('/api/paper', {
         params: {
-          pid: this.paper_params.pid ? parseInt(this.paper_params.pid) : null,
+          pid: this.paper_params.pid ? this.paper_params.pid : null,
           pname: this.paper_params.pname ? this.paper_params.pname : null,
           psource: this.paper_params.psource ? this.paper_params.psource : null,
           pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
@@ -40,13 +55,34 @@ export default {
       })
     },
     postPaper() {
-      // post /api/paper
-      if (!this.paper_params.pid) {
+      if (this.paper_params.pid === null) {
         alert('请输入论文编号')
         return
       }
+      // post /api/paper
       axios.post('/api/paper', {
-        pid: this.paper_params.pid ? parseInt(this.paper_params.pid) : null,
+        pid: this.paper_params.pid ? this.paper_params.pid : null,
+        pname: this.paper_params.pname ? this.paper_params.pname : null,
+        psource: this.paper_params.psource ? this.paper_params.psource : null,
+        pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
+        ptype: this.paper_params.ptype ? this.paper_params.ptype : null,
+        level: this.paper_params.level ? this.paper_params.level : null
+      }).then((res: any) => {
+        console.log(res.data)
+        // this.papers = [ this.paper_params ]
+      }).catch((err: any) => {
+        console.log(err)
+        alert(err.response.data.msg ? err.response.data.msg : err)
+      })
+    },
+    putPaper() {
+      if (this.paper_params.pid === null) {
+        alert('请输入论文编号')
+        return
+      }
+      // put /api/paper
+      axios.put('/api/paper', {
+        pid: this.paper_params.pid ? this.paper_params.pid : null,
         pname: this.paper_params.pname ? this.paper_params.pname : null,
         psource: this.paper_params.psource ? this.paper_params.psource : null,
         pyear: this.paper_params.pyear ? this.paper_params.pyear : null,
@@ -60,6 +96,10 @@ export default {
         alert(err.response.data.msg ? err.response.data.msg : err)
       })
     },
+    submitForm() {
+      this.submit ? this.submit() : null
+      this.submit = null
+    }
   }
 }
 
@@ -68,21 +108,24 @@ export default {
 <template>
   <div class='blocktitle thick'>论文查询</div>
   <div class='blocktext Plaintext'>
-    <form v-on:submit.prevent="">
+    <form v-on:submit.prevent="submitForm">
       <div style="float: right; width: 20%; text-align: center;">
-        <br/>
-        <button @click="getPaper">&nbsp;检索&nbsp;</button>
-        <br/><br/>
-        <button @click="postPaper">&nbsp;登记&nbsp;</button>
+        <button @click="submit = getPaper" style="margin: .4rem">&nbsp;检索&nbsp;</button><br/>
+        <button @click="submit = postPaper" style="margin: .4rem">&nbsp;登记&nbsp;</button><br/>
+        <button @click="submit = putPaper" style="margin: .4rem">&nbsp;修改&nbsp;</button>
       </div>
       <div style="width: 80%; text-align: center;">
-        <label for="pyear">论文年份</label>&nbsp;
+        <label for="pid">论文编号</label>&nbsp;
+        <!--限定非负整数-->
         <input
           class="inputli"
-          v-model="paper_params.pyear"
-          id="pyear"
-          placeholder="pyear" />&nbsp;
-        <label for="pid">论文类型</label>&nbsp;
+          type="number"
+          min=0
+          max=2147483647
+          v-model="paper_params.pid"
+          id="pid"
+          placeholder="pid" />&nbsp;
+        <label for="ptype">论文类型</label>&nbsp;
         <select
           class="inputli"
           v-model="paper_params.ptype"
@@ -94,12 +137,12 @@ export default {
           <option value="3">poster paper</option>
           <option value="4">demopaper</option>
         </select><br/><br/>
-        <label for="pid">论文编号</label>&nbsp;
+        <label for="pname">论文名称</label>&nbsp;
         <input
           class="inputli"
-          v-model="paper_params.pid"
-          id="pid"
-          placeholder="pid" />&nbsp;
+          v-model="paper_params.pname"
+          id="pname"
+          placeholder="pname" />&nbsp;
         <label for="level">论文级别</label>&nbsp;
         <select
           class="inputli"
@@ -120,12 +163,12 @@ export default {
           v-model="paper_params.psource"
           id="psource"
           placeholder="psource" />&nbsp;
-        <label for="pname">论文名称</label>&nbsp;
+        <label for="pyear">论文年份</label>&nbsp;
         <input
           class="inputli"
-          v-model="paper_params.pname"
-          id="pname"
-          placeholder="pname" /><br/>
+          v-model="paper_params.pyear"
+          id="pyear"
+          placeholder="pyear" /><br/>
       </div>
     </form>
   </div>
@@ -145,4 +188,5 @@ export default {
 
 <style scoped>
 .inputli{width: 30%}
+button{width: 6rem;height: 2.5rem;margin:.4rem}
 </style>
