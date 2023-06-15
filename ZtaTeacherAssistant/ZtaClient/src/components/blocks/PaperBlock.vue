@@ -151,12 +151,9 @@ export default {
       })
     },
     async beforeSubmitForm(paper_form_ref: any, callback: CallableFunction) {
-      try {
-        await paper_form_ref.validate()
-      } catch (err) {
-        return
-      }
-      callback()
+      paper_form_ref.validate()
+      .then(callback)
+      .catch((err: any) => {})
     },
     close_remove_dialog() {
       this.remove_dialog_visiable = false
@@ -179,7 +176,7 @@ export default {
           } else {
             callback(new Error('请输入正确的论文编号'))
           }
-        }, trigger: 'change' }
+        }, trigger: 'blur' }
       ],
       pyear: [
         { validator: (rule: any, value: any, callback: CallableFunction) => {
@@ -190,7 +187,7 @@ export default {
           } else {
             callback(new Error('日期须在今天以前'))
           }
-        }, trigger: 'change' }
+        }, trigger: 'blur' }
       ],
     }
   }
@@ -238,6 +235,8 @@ export default {
             class="inputli"
             @blur="() => { if (paper_params.pid === '') paper_params.pid = null }"
             type="number"
+            min=0
+            max=2147483647
             v-model.number="paper_params.pid"
             id="pid" />
         </el-form-item>
@@ -291,12 +290,12 @@ export default {
   <div class='blocktext Plaintext'><ul><paper-item
     v-for="(paper, index) in papers"
     :key="index"
-    :pid="paper['pid']"
-    :pname="paper['pname']"
-    :psource="paper['psource']"
-    :pyear="paper['pyear']"
-    :ptype="ptype_options.find(ptype => ptype.value === paper['ptype'])?.label"
-    :level="level_options.find(level => level.value === paper['level'])?.label"
+    :pid="paper.pid"
+    :pname="paper.pname"
+    :psource="paper.psource"
+    :pyear="paper.pyear"
+    :ptype="ptype_options.find(ptype => ptype.value === paper.ptype)?.label"
+    :level="level_options.find(level => level.value === paper.level)?.label"
     @remove="removePaper(index)" />
   </ul></div>
 </template>
