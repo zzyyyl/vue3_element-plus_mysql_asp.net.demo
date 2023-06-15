@@ -1,5 +1,7 @@
 <script lang="ts">
-export default {
+import { defineComponent } from 'vue'
+
+export default defineComponent({
   props: ['pid', 'pname', 'psource', 'pyear', 'ptype', 'level'],
   emits: ['delete'],
   data() {
@@ -13,7 +15,7 @@ export default {
       this.popoverVisible = false
     }
   }
-}
+})
 </script>
 
 <template>

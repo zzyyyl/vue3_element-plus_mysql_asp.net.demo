@@ -1,15 +1,15 @@
 @import './bootstrap.css';
 @font-face {
   font-family: 'English Pretty Font';
-  src: url('fonts/Signarita Zhai Rhianne.ttf');
+  src: url('/fonts/Signarita Zhai Rhianne.ttf');
 }
 @font-face {
   font-family: 'Code Normal Font';
-  src: url('fonts/consola.ttf');
+  src: url('/fonts/consola.ttf');
 }
 @font-face {
   font-family: 'English Normal Font';
-  src: url('fonts/calibri.ttf');
+  src: url('/fonts/calibri.ttf');
 }
 body {
   background-size: cover;
@@ -43,7 +43,7 @@ nav.maintitle {
   height: 5rem;
   background-color: #3d3e3f;
   position: fixed;
-  z-index: 9999;
+  z-index: 1;
   font-size: 1.2rem;
 }
 nav.maintitle ul {

@@ -1,45 +1,41 @@
+<script setup lang="ts">
+import PaperItem from '../components/items/PaperItem.vue'
+import PaperForm from '../components/items/PaperForm.vue'
+const level_options = [
+  { value: 0, label: '任意' },
+  { value: 1, label: 'CCF-A' },
+  { value: 2, label: 'CCF-B' },
+  { value: 3, label: 'CCF-C' },
+  { value: 4, label: '中文 CCF-A' },
+  { value: 5, label: '中文 CCF-B' },
+  { value: 6, label: '无级别' }
+]
+const ptype_options = [
+  { value: 0, label: '任意' },
+  { value: 1, label: 'full paper' },
+  { value: 2, label: 'short paper' },
+  { value: 3, label: 'poster paper' },
+  { value: 4, label: 'demopaper' }
+]
+</script>
+
 <script lang="ts">
 import axios from 'axios'
 import { ElNotification } from 'element-plus'
-import PaperItem from '../items/PaperItem.vue'
-import PaperForm from '../items/PaperForm.vue'
 
 interface iPaperParams {
   pid: number | string | null,
   pname: string | null,
   psource: string | null,
   pyear: string | null,
-  ptype: string | null,
-  level: string | null
-}
-interface iData {
-  level_options: { value: number | null, label: string }[],
-  ptype_options: { value: number | null, label: string }[],
-  papers: iPaperParams[]
+  ptype: number | null,
+  level: number | null
 }
 
 export default {
-  components: { PaperItem, PaperForm },
-  props: {},
-  data() : iData {
+  data() {
     return {
-      level_options: [
-        { value: 0, label: '任意' },
-        { value: 1, label: 'CCF-A' },
-        { value: 2, label: 'CCF-B' },
-        { value: 3, label: 'CCF-C' },
-        { value: 4, label: '中文 CCF-A' },
-        { value: 5, label: '中文 CCF-B' },
-        { value: 6, label: '无级别' }
-      ],
-      ptype_options: [
-        { value: 0, label: '任意' },
-        { value: 1, label: 'full paper' },
-        { value: 2, label: 'short paper' },
-        { value: 3, label: 'poster paper' },
-        { value: 4, label: 'demopaper' }
-      ],
-      papers: [],
+      papers: [] as iPaperParams[],
     }
   },
   methods: {
@@ -75,7 +71,7 @@ export default {
         pyear: paper_params.pyear || null,
         ptype: paper_params.ptype || null,
         level: paper_params.level || null
-      }).then((res: any) => {
+      }).then(() => {
         this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
         ElNotification.success({message: `论文 ${pid} 登记成功`, duration: 1000})
       }).catch((err: any) => {
@@ -96,7 +92,7 @@ export default {
         pyear: paper_params.pyear || null,
         ptype: paper_params.ptype || null,
         level: paper_params.level || null
-      }).then((res: any) => {
+      }).then(() => {
         ElNotification.success({message: `论文 ${pid} 修改成功`, duration: 1000})
         this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
       }).catch((err: any) => {
@@ -112,15 +108,14 @@ export default {
       this.papers.splice(index, 1)
       // delete /api/paper
       axios.delete('/api/paper', { params: { pid: pid }})
-        .then((res: any) => {
+        .then(() => {
           ElNotification.success({message: `论文 ${pid} 删除成功`, duration: 1000})
         })
         .catch((err: any) => {
           ElNotification.error({message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`})
         })
     }
-  },
-  mounted() {}
+  }
 }
 
 </script>
@@ -128,10 +123,13 @@ export default {
 <template>
   <div class='blocktitle thick'>论文查询</div>
   <div class='blocktext Plaintext'>
-    <paper-form @get="getPaper" @post="postPaper" @put="putPaper"></paper-form>
+    <paper-form
+      @get="getPaper"
+      @post="postPaper"
+      @put="putPaper" />
   </div>
-  <div class='blocktitle thick'>查询结果</div>
-  <div class='blocktext'>
+  <div v-if="papers.length" class='blocktitle thick'>查询结果</div>
+  <div v-if="papers.length" class='blocktext'>
     <ul>
       <paper-item
         v-for="(paper, index) in papers"

@@ -1,16 +1,16 @@
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, type PropType } from 'vue'
 
 export default defineComponent({
   emits: ['update:modelValue'],
   props: {
     modelValue: {
-      type: Number,
+      type: Number as PropType<number | null>,
       default: null
     },
     options: {
       type: Array<{
-        value: number,
+        value: number | null,
         label: string
       }>,
       default: []

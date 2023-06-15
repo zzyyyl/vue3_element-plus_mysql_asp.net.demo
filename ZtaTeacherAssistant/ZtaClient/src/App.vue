@@ -1,52 +1,50 @@
-<script lang="ts">
-import PaperBlock from './components/blocks/PaperBlock.vue'
-import HitokotoBlock from './components/blocks/HitokotoBlock.vue'
+<script setup lang="ts">
+import HitokotoView from './views/HitokotoView.vue'
 
-export default {
-  name: 'App',
-  components: {
-    PaperBlock,
-    HitokotoBlock
-  },
-  props: {},
-  data() {
-    return {
-      models: {
-        paper: '/paper',
-        teacher: '/teacher'
-      }
+const models = {
+  paper: '/search/paper',
+  teacher: '/search/teacher'
+}
+
+const picTotal = 13
+let randBgIndex = Math.floor(Math.random() * picTotal) % picTotal
+document.body.style.backgroundImage = 'url(/backgroundpics/' + randBgIndex + '.jpg)'
+document.body.style.backgroundPosition = 'center center'
+document.body.style.backgroundRepeat = 'no-repeat'
+
+</script>
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({
+  watch: {
+    $route(to, from) {
+      console.log(to, from)
+      document.title = `ZTA - ${to.params.table ?? '首页'}`
     }
   },
-  created() {
-    const picTotal = 13
-    let randBgIndex = Math.floor(Math.random() * picTotal) % picTotal
-    document.body.style.backgroundImage = 'url(backgroundpics/' + randBgIndex + '.jpg)'
-    document.body.style.backgroundPosition = 'center center'
-    document.body.style.backgroundRepeat = 'no-repeat'
-  }
-}
+})
 </script>
-
 <template>
   <el-container>
     <el-header>
-      <!-- <nav class="maintitle">
+      <nav class="maintitle">
         <ul>
-          <li class="thick"><a href="/">ZTA</a></li>
+          <li class="thick">
+            <router-link to="/">ZTA</router-link></li>
           <li v-for="(value, key) in models" :key="key" class="Code">
-            <a :href="value">{{ key }}</a>
+            <router-link :to="value">{{ key }}</router-link>
           </li>
         </ul>
-      </nav> -->
+      </nav>
     </el-header>
     <el-main>
       <div class="transbox">
         <el-row justify="space-evenly">
           <el-col :xs="22" :sm="22" :md="14" :lg="15" :xl="16">
-            <paper-block />
+            <router-view />
           </el-col>
           <el-col :xs="22" :sm="22" :md="8" :lg="7" :xl="6">
-            <hitokoto-block />
+            <hitokoto-view />
           </el-col>
         </el-row>
       </div>
