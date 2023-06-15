@@ -73,15 +73,6 @@ nav.maintitle ul li a:hover {
 nav.maintitle ul li span {
   color: inherit;
 }
-nav.maintitle ul li.maintitletext {
-  color: #f3f4f5;
-  padding-top: 0.5rem;
-  font-size: 1.8rem;
-}
-nav.maintitle ul li.EnglishP.maintitletext span {
-  display: block;
-  padding-top: 1rem;
-}
 div.blocktitle {
   text-align: center;
   font-size: 2rem;
@@ -89,6 +80,7 @@ div.blocktitle {
   box-shadow: none;
   border: 1px solid #d4d4d5;
   background: #f3f4f5;
+  margin-top: 2rem;
   margin-bottom: 0;
   border-radius: 5px 5px 0 0;
 }
@@ -98,6 +90,7 @@ div.blocktext {
   border: 1px solid #d4d4d5;
   border-top: none;
   overflow-y: hidden;
+  margin-bottom: 2rem;
   font-size: 18px;
 }
 div.blocktext table {
@@ -145,14 +138,14 @@ div.blocktext table tr.expenditure td.id {
 }
 div.transbox {
   position: static;
-  margin: 6rem 2% 30px;
-  padding: 10px 0;
+  margin: 2rem 2% 30px;
+  /* padding: 1rem 0; */
   background-color: white;
   filter: alpha(opacity=90);
   opacity: 0.9;
   z-index: -1;
   border-radius: 10px;
-  min-width: 1250px;
+  /* min-width: 1250px; */
 }
 div.maintext {
   margin: 30px 50px 20px;
@@ -285,4 +278,9 @@ button {
   height: 2.5rem;
   border-radius: 5px;
   border: 1px solid gray;
+}
+button.myplain {
+  width: 5rem;
+  height: 2.5rem;
+  margin: 0.4rem 1rem;
 }
