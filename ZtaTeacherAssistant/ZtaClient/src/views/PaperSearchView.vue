@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PaperItem from '../components/items/PaperItem.vue'
+import DangerButton from '../components/items/DangerButton.vue'
 import PaperForm from '../components/items/PaperForm.vue'
 const level_options = [
   { value: 0, label: '任意' },
@@ -130,22 +130,32 @@ export default {
   </div>
   <div v-if="papers.length" class='blocktitle thick'>查询结果</div>
   <div v-if="papers.length" class='blocktext'>
-    <ul>
-      <paper-item
-        v-for="(paper, index) in papers"
-        :key="index"
-        :pid="paper.pid"
-        :pname="paper.pname"
-        :psource="paper.psource"
-        :pyear="paper.pyear"
-        :ptype="ptype_options.find(ptype => ptype.value === paper.ptype)?.label"
-        :level="level_options.find(level => level.value === paper.level)?.label"
-        @delete="deletePaper(index)" />
-    </ul>
+    <el-table :data="papers" max-height="400" stripe>
+      <el-table-column fixed prop="pid" label="编号" width="60"></el-table-column>
+      <el-table-column prop="pname" label="名称" width="120"></el-table-column>
+      <el-table-column prop="psource" label="来源" width="100"></el-table-column>
+      <el-table-column prop="pyear" label="年份" width="120"></el-table-column>
+      <el-table-column prop="ptype" label="类型" width="120">
+        <template #default="scope">
+          {{ ptype_options.find(type => type.value === scope.row.ptype)?.label }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="level" label="级别" width="120">
+        <template #default="scope">
+          {{ level_options.find(level => level.value === scope.row.level)?.label }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" fixed="right" width="100">
+        <template #default="scope">
+          <el-button plain type="primary" @click="$router.push(`/paper/${scope.row.pid}`)">详 情</el-button>
+          <danger-button label="删 除" message="是否删除该论文？" @commit="deletePaper(scope.$index)"/>
+        </template>
+      </el-table-column>
+    </el-table>
   </div>
 </template>
 
 <style scoped>
 .inputli{width: 99%;border: 0;}
-button{width: 5rem;height: 2.5rem;margin:.6rem 0}
+/* button{width: 5rem;height: 2.5rem;margin:.6rem 0} */
 </style>

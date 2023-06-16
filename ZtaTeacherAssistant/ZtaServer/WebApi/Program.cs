@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using System.Data;
 using WebApi.Tables;
+using System.Linq;
 
 const int MaxSqlResultLength = 100;
 
@@ -31,7 +32,10 @@ Console.WriteLine("Connection successful.");
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
-
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.IncludeFields = true;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -49,6 +53,60 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 #region paper
+static async Task<List<Paper>?> GetPaper(
+    MySqlConnection sqlConn,
+    int? pid = null, string? pname = null, string? psource = null, DateTime? pyear = null, int? ptype = null, int? level = null,
+    string? orderby = null, bool? desc = null, int? limit = null)
+{
+    limit ??= 30;
+    var sqlQueryStr = "Select * from paper";
+
+    var wheres = new List<string>();
+    if (pid is not null) wheres.Add($"pid={pid}");
+    if (pname is not null) wheres.Add($"pname='{pname}'");
+    if (psource is not null) wheres.Add($"psource='{psource}'");
+    if (pyear is not null) wheres.Add($"pyear='{pyear}'");
+    if (ptype is not null) wheres.Add($"ptype={ptype}");
+    if (level is not null) wheres.Add($"level={level}");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    sqlQueryStr += $" order by {orderby ?? "pid"}";
+    if (desc ?? false) sqlQueryStr += " desc";
+    sqlQueryStr += $" limit {Math.Max(Math.Min(limit ?? 0, MaxSqlResultLength), 0)}";
+
+    try
+    {
+        // var sqlConn = new MySqlConnection(sqlConnCommand);
+        // await sqlConn.OpenAsync();
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var papers = new List<Paper>();
+        using (var reader = await sqlCommand.ExecuteReaderAsync())
+        {
+            while (reader.Read())
+            {
+                papers.Add(new Paper
+                {
+                    Pid = reader.GetInt32("pid"),
+                    Pname = reader.GetValue("pname") as string,
+                    Psource = reader.GetValue("psource") as string,
+                    Pyear = (reader.GetValue("pyear") as DateTime?)?.ToString("yyyy-MM-dd"),
+                    Ptype = reader.GetValue("ptype") as int?,
+                    Level = reader.GetValue("level") as int?,
+                });
+            }
+        }
+        return papers;
+    }
+    catch(Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+}
+
 app.MapPost("/paper", async ([FromBody]Paper paper) =>
 {
     string keys = "pid", values = $"{paper.Pid}";
@@ -142,46 +200,92 @@ app.MapGet("/paper", async (
     int? pid, string? pname, string? psource, DateTime? pyear, int? ptype, int? level,
     string? orderby, bool? desc, int? limit) =>
 {
-    limit ??= 30;
-    var sqlQueryStr = "Select * from paper";
-
-    var wheres = new List<string>();
-    if (pid is not null) wheres.Add($"pid={pid}");
-    if (pname is not null) wheres.Add($"pname='{pname}'");
-    if (psource is not null) wheres.Add($"psource='{psource}'");
-    if (pyear is not null) wheres.Add($"pyear='{pyear}'");
-    if (ptype is not null) wheres.Add($"ptype={ptype}");
-    if (level is not null) wheres.Add($"level={level}");
-    if (wheres.Count > 0)
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
     {
-        sqlQueryStr += " where ";
-        sqlQueryStr += string.Join(" and ", wheres);
+        await sqlConn.OpenAsync();
     }
-    sqlQueryStr += $" order by {orderby ?? "pid"}";
-    if (desc ?? false) sqlQueryStr += " desc";
-    sqlQueryStr += $" limit {Math.Max(Math.Min(limit ?? 0, MaxSqlResultLength), 0)}";
+    catch
+    {
+        return Results.NotFound();
+    }
+    var papers = await GetPaper(sqlConn, pid, pname, psource, pyear, ptype, level, orderby, desc, limit);
+
+    return papers is null ? Results.NotFound() : Results.Ok(papers);
+});
+
+app.MapGet("/publish-paper/{pid}", async ([FromRoute]int pid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var papers = await GetPaper(sqlConn, pid);
+    if (papers is null) return Results.NotFound();
+
+    if (papers.Count != 1) return Results.BadRequest();
+
+    var sqlQueryStr = $"Select * from publish_paper where pid={pid}";
+    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+
+    var publish_papers = new List<PublishPaper>();
+    using var reader = await sqlCommand.ExecuteReaderAsync();
+    while (reader.Read())
+    {
+        publish_papers.Add(new PublishPaper
+        {
+            Tid = reader.GetString("tid"),
+            Pid = reader.GetInt32("pid"),
+            Ptrank = reader.GetValue("ptrank") as int?,
+            Correspond = reader.GetValue("correspond") as bool?
+        });
+    }
+    await reader.CloseAsync();
+    await sqlTrans.CommitAsync();
+    return Results.Ok(new PaperDetail(papers[0], publish_papers));
+
+
+});
+app.MapPost("/publish-paper/{pid}", async ([FromRoute]int pid, [FromBody] List<PublishPaper> authors) =>
+{
+    foreach (var author in authors.Where(author => author.Pid != pid))
+        return Results.BadRequest(author);
 
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
-    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
-    var papers = new List<Paper>();
-    using (var reader = await sqlCommand.ExecuteReaderAsync())
+    using var sqlTrans = sqlConn.BeginTransaction();
+    try
     {
-        while (reader.Read())
-        {
-            papers.Add(new Paper
-            {
-                Pid = reader.GetInt32("pid"),
-                Pname = reader.GetValue("pname") as string,
-                Psource = reader.GetValue("psource") as string,
-                Pyear = (reader.GetValue("pyear") as DateTime?)?.ToString("yyyy-MM-dd"),
-                Ptype = reader.GetValue("ptype") as int?,
-                Level = reader.GetValue("level") as int?,
-            });
-        }
+        var sqlQueryStr = $"delete from publish_paper where publish_paper.pid={pid}";
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        await sqlCommand.ExecuteNonQueryAsync();
     }
-
-    return Results.Ok(papers);
+    catch
+    {
+        await sqlTrans.RollbackAsync();
+        await sqlConn.CloseAsync();
+        return Results.BadRequest(pid);
+    }
+    
+    foreach (var author in authors)
+    {
+        var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = author.Tid, Direction = ParameterDirection.Input };
+        var para_pid = new MySqlParameter("?pid", MySqlDbType.Int32) { Value = pid, Direction = ParameterDirection.Input };
+        var para_ptrank = new MySqlParameter("?ptrank", MySqlDbType.Int32) { Value = author.Ptrank, Direction = ParameterDirection.Input };
+        var para_correspond = new MySqlParameter("?correspond", MySqlDbType.Int32) { Value = author.Correspond, Direction = ParameterDirection.Input };
+        var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+        var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "publish_paper_insert", CommandType = CommandType.StoredProcedure };
+        sqlCommand.Parameters.Add(para_tid);
+        sqlCommand.Parameters.Add(para_pid);
+        sqlCommand.Parameters.Add(para_ptrank);
+        sqlCommand.Parameters.Add(para_correspond);
+        sqlCommand.Parameters.Add(para_out);
+        var exec_res = await sqlCommand.ExecuteNonQueryAsync();
+        if (Convert.ToInt32(para_out.Value) == 0 && exec_res == 1) continue;
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(author);
+    }
+    await sqlTrans.CommitAsync();
+    return Results.Ok();
 });
 #endregion
 

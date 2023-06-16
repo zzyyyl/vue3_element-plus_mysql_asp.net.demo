@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import HitokotoView from './views/HitokotoView.vue'
+import { useRoute } from 'vue-router'
+import { watch } from 'vue'
+
+const route = useRoute()
 
 const models = {
   paper: '/search/paper',
@@ -11,19 +15,16 @@ let randBgIndex = Math.floor(Math.random() * picTotal) % picTotal
 document.body.style.backgroundImage = 'url(/backgroundpics/' + randBgIndex + '.jpg)'
 document.body.style.backgroundPosition = 'center center'
 document.body.style.backgroundRepeat = 'no-repeat'
+document.title = `ZTA - ${route.path == '/' ? '首页' : route.path.slice(1)}`
 
+watch(
+  () => route.path,
+  async newParam => {
+    document.title = `ZTA - ${newParam == '/' ? '首页' : newParam.slice(1)}`
+  }
+)
 </script>
-<script lang="ts">
-import { defineComponent } from 'vue'
-export default defineComponent({
-  watch: {
-    $route(to, from) {
-      console.log(to, from)
-      document.title = `ZTA - ${to.params.table ?? '首页'}`
-    }
-  },
-})
-</script>
+
 <template>
   <el-container>
     <el-header>

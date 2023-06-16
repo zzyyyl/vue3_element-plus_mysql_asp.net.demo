@@ -122,6 +122,16 @@ alter table publish_paper add constraint FK_PUBLISH__PUBLISH_P_PAPER foreign key
       references paper (pid) on delete restrict on update restrict;
 
 
+-- # ---------- VIEWS ----------
+-- drop view if exists publish_paper_with_author;
+-- create view publish_paper_with_author as
+-- select paper.pid, paper.pname, paper.psource, paper.pyear, paper.ptype, paper.level,
+--        publish_paper.tid, publish_paper.ptrank, publish_paper.correspond,
+--        teacher.tname, teacher.gender, teacher.title
+-- from paper
+-- left join publish_paper on publish_paper.pid = paper.pid
+-- left join teacher on teacher.tid = publish_paper.tid;
+
 
 # ---------- PROCEDURES ----------
 drop procedure if exists paper_del;
@@ -176,7 +186,7 @@ create procedure publish_paper_insert(in tid char(5), in pid int, in ptrank int,
 begin
     declare s int default 0;
     declare continue handler for sqlexception set s = 1;
-    start transaction;
+    -- start transaction;
     if not exists(select * from teacher where teacher.tid = tid) then
         set s = 2;
     end if;
@@ -186,16 +196,20 @@ begin
     if exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.ptrank = ptrank) then
         set s = 4;
     end if;
-    if correspond = true and exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.correspond = true) then
+    if exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.tid = tid) then
+        -- Ö÷¼üÖØ¸´
         set s = 5;
+    end if;
+    if correspond = true and exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.correspond = true) then
+        set s = 6;
     end if;
     if s = 0 then
         set state = 0;
         insert into publish_paper value(tid, pid, ptrank, correspond);
-        commit;
+        -- commit;
     else
         set state = s;
-        rollback;
+        -- rollback;
     end if;
 end //
 delimiter ;

@@ -17,14 +17,14 @@ const router = createRouter({
       path: "/search/paper",
       component: () => import("./views/PaperSearchView.vue"),
     },
-    // {
-    //   path: "/search/teacher",
-    //   component: () => import("./components/blocks/TeacherBlock.vue"),
-    // },
-    // {
-    //   path: "/search/paper/:id",
-    //   component: () => import("./components/blocks/PaperDetailView.vue"),
-    // }
+    {
+      path: "/paper/:pid",
+      component: () => import("./views/PaperDetailView.vue"),
+    },
+    {
+      path: "/search/teacher",
+      component: () => {},//() => import("./components/blocks/TeacherBlock.vue"),
+    },
   ]
 })
 

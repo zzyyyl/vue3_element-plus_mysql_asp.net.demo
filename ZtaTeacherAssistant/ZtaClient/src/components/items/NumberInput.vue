@@ -9,6 +9,7 @@ export default defineComponent({
   },
   watch: {
     num(val: string) {
+      console.log("number-input watch num:", val)
       if (!val) {
         this.$emit('update:modelValue', null)
       } else {
