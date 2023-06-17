@@ -4,25 +4,22 @@ import { defineComponent, type PropType } from 'vue'
 export default defineComponent({
   emits: ['update:modelValue'],
   props: {
-    modelValue: {
-      type: Number as PropType<number | null>,
-      default: null
-    },
+    modelValue: {},
     options: {
       type: Array<{
-        value: number | null,
+        value: any,
         label: string
       }>,
       default: []
     }
   },
-  data() : { choice: number | null } {
+  data() : { choice: any } {
     return {
       choice: null
     }
   },
   watch: {
-    modelValue(val: number | null) {
+    modelValue(val: any) {
       this.choice = val
     },
     choice(val: number) {
@@ -42,7 +39,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <el-select style="width: 98%;border: 0" v-model="choice" clearable @clear="temp">
+  <el-select style="width: 100%" v-model="choice" clearable @clear="temp">
     <el-option
       class="Code"
       v-for="item in options"

@@ -55,7 +55,7 @@ app.MapControllers();
 #region paper
 static async Task<List<Paper>?> GetPaper(
     MySqlConnection sqlConn,
-    int? pid = null, string? pname = null, string? psource = null, DateTime? pyear = null, int? ptype = null, int? level = null,
+    int? pid = null, string? pname = null, string? psource = null, DateTime? pyear_from = null, DateTime? pyear_to = null, int? ptype = null, int? level = null,
     string? orderby = null, bool? desc = null, int? limit = null)
 {
     limit ??= 30;
@@ -65,7 +65,8 @@ static async Task<List<Paper>?> GetPaper(
     if (pid is not null) wheres.Add($"pid={pid}");
     if (pname is not null) wheres.Add($"pname='{pname}'");
     if (psource is not null) wheres.Add($"psource='{psource}'");
-    if (pyear is not null) wheres.Add($"pyear='{pyear}'");
+    if (pyear_from is not null) wheres.Add($"pyear>='{pyear_from?.ToString("yyyy-MM-dd")}'");
+    if (pyear_to is not null) wheres.Add($"pyear<='{pyear_to?.ToString("yyyy-MM-dd")}'");
     if (ptype is not null) wheres.Add($"ptype={ptype}");
     if (level is not null) wheres.Add($"level={level}");
     if (wheres.Count > 0)
@@ -79,8 +80,6 @@ static async Task<List<Paper>?> GetPaper(
 
     try
     {
-        // var sqlConn = new MySqlConnection(sqlConnCommand);
-        // await sqlConn.OpenAsync();
         var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
         var papers = new List<Paper>();
         using (var reader = await sqlCommand.ExecuteReaderAsync())
@@ -266,7 +265,7 @@ app.MapPut("/paper", async ([FromBody] Paper paper) =>
     return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
 });
 app.MapGet("/paper", async (
-    int? pid, string? pname, string? psource, DateTime? pyear, int? ptype, int? level,
+    int? pid, string? pname, string? psource, DateTime? pyear_from, DateTime? pyear_to, int? ptype, int? level,
     string? orderby, bool? desc, int? limit) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
@@ -278,7 +277,7 @@ app.MapGet("/paper", async (
     {
         return Results.NotFound();
     }
-    var papers = await GetPaper(sqlConn, pid, pname, psource, pyear, ptype, level, orderby, desc, limit);
+    var papers = await GetPaper(sqlConn, pid, pname, psource, pyear_from, pyear_to, ptype, level, orderby, desc, limit);
 
     return papers is null ? Results.NotFound() : Results.Ok(papers);
 });

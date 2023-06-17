@@ -1,24 +1,35 @@
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, type PropType } from 'vue'
 export default defineComponent({
+  props: {
+    modelValue: {
+      type: Number as PropType<number | null>,
+      default: null
+    },
+    max: {
+      type: Number,
+      default: 2147483647
+    },
+    min: {
+      type: Number,
+      default: 0
+    }
+  },
   emits: ['update:modelValue'],
   data() {
     return {
-      num: null
+      num: null as number | null
     }
   },
-  watch: {
-    num(val: string) {
-      console.log("number-input watch num:", val)
-      if (!val) {
-        this.$emit('update:modelValue', null)
+  methods: {
+    updateNum() {
+      console.log('update', this.num)
+      if (!this.num && this.num !== 0) {
+        this.num = null
       } else {
-        this.$emit(
-          'update:modelValue', 
-          Math.min(2147483647,
-                   parseInt(val.replace(/[^\d]/g, '')))
-        )
+        this.num = Math.max(this.min, Math.min(this.max, this.num))
       }
+      this.$emit('update:modelValue', this.num)
     }
   }
 })
@@ -26,8 +37,8 @@ export default defineComponent({
 
 <template>
   <el-input
-    style="width: 98%;border: 0"
+    style="width: 100%"
     type="number"
-    min=0 max=2147483647
-    v-model="num" />
+    :min="min" :max="max"
+    v-model="num" @input="updateNum" />
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DangerButton from '../components/items/DangerButton.vue'
-import PaperForm from '../components/items/PaperForm.vue'
+import PaperForm from '../components/PaperForm.vue'
 const level_options = [
   { value: 1, label: 'CCF-A' },
   { value: 2, label: 'CCF-B' },
@@ -27,26 +27,36 @@ interface iPaperParams {
   psource: string | null,
   pyear: string | null,
   ptype: number | null,
-  level: number | null
+  level: number | null,
+  orderby: 'pid' | 'pname' | 'pyear' | 'ptype' | 'level' | 'psource',
+  desc: boolean,
+  limit: number
 }
 
 export default {
   data() {
     return {
       papers: [] as iPaperParams[],
+      title: '论文检索',
     }
   },
   methods: {
     getPaper(paper_params: iPaperParams) {
+      let pyear_from = paper_params.pyear?.at(0) ?? null
+      let pyear_to = paper_params.pyear?.at(1) ?? null
       // get /api/paper
       axios.get('/api/paper', {
         params: {
           pid: paper_params.pid ?? null,
           pname: paper_params.pname || null,
           psource: paper_params.psource || null,
-          pyear: paper_params.pyear || null,
+          pyear_from: pyear_from,
+          pyear_to: pyear_to,
           ptype: paper_params.ptype || null,
-          level: paper_params.level || null
+          level: paper_params.level || null,
+          orderby: paper_params.orderby || null,
+          desc: paper_params.desc || null,
+          limit: paper_params.limit || null
         },
       }).then((res: any) => {
         ElMessage.success({showClose: true, message: `论文检索成功`, duration: 1000})
@@ -112,6 +122,9 @@ export default {
         .catch((err: any) => {
           ElMessage.error({showClose: true, message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`})
         })
+    },
+    onMethodChange(method: string) {
+      this.title = method === 'get' ? '论文检索' : '论文登记'
     }
   }
 }
@@ -119,26 +132,28 @@ export default {
 </script>
 
 <template>
-  <div class='blocktitle thick'>论文查询</div>
+  <div class='blocktitle thick'>
+    {{ title }}
+  </div>
   <div class='blocktext Plaintext'>
     <paper-form
       @get="getPaper"
       @post="postPaper"
-      @put="putPaper" />
+      @method-change="onMethodChange"/>
   </div>
   <div v-if="papers.length" class='blocktitle thick'>查询结果</div>
   <div v-if="papers.length" class='blocktext'>
     <el-table :data="papers" max-height="400" stripe>
-      <el-table-column fixed prop="pid" label="编号" width="60"></el-table-column>
+      <el-table-column fixed prop="pid" label="编号" sortable width="80"></el-table-column>
       <el-table-column prop="pname" label="名称" width="120"></el-table-column>
       <el-table-column prop="psource" label="来源" width="100"></el-table-column>
-      <el-table-column prop="pyear" label="年份" width="120"></el-table-column>
-      <el-table-column prop="ptype" label="类型" width="120">
+      <el-table-column prop="pyear" label="年份" sortable width="120"></el-table-column>
+      <el-table-column prop="ptype" label="类型" sortable width="120">
         <template #default="scope">
           {{ ptype_options.find(type => type.value === scope.row.ptype)?.label }}
         </template>
       </el-table-column>
-      <el-table-column prop="level" label="级别" width="120">
+      <el-table-column prop="level" label="级别" sortable width="120">
         <template #default="scope">
           {{ level_options.find(level => level.value === scope.row.level)?.label }}
         </template>

@@ -16,5 +16,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <el-input style="width: 98%;border: 0" v-model="str" />
+  <el-input style="width: 100%" v-model="str" />
 </template>
