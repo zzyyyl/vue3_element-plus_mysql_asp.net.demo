@@ -211,6 +211,7 @@ export default {
         <danger-button
           label="确认更改"
           message="是否确认更改？"
+          type="primary"
           style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
           @commit="onPaperSubmit" />
       </el-col>
@@ -263,6 +264,7 @@ export default {
         <danger-button
           label="确认更改"
           message="是否确认更改？"
+          type="primary"
           style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
           @commit="onAuthorSubmit" />
       </el-col>
