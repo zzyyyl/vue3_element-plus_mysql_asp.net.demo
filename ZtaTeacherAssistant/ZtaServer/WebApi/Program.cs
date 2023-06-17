@@ -106,8 +106,7 @@ static async Task<List<Paper>?> GetPaper(
         return null;
     }
 }
-
-app.MapPost("/paper", async ([FromBody]Paper paper) =>
+static async Task<ResultMsg> PostPaper(MySqlConnection sqlConn, Paper paper)
 {
     string keys = "pid", values = $"{paper.Pid}";
     if (paper.Pname is not null)
@@ -119,7 +118,7 @@ app.MapPost("/paper", async ([FromBody]Paper paper) =>
     {
         keys += ",psource";
         values += $",\"{paper.Psource}\"";
-    }   
+    }
     if (paper.Pyear is not null)
     {
         keys += ",pyear";
@@ -136,33 +135,28 @@ app.MapPost("/paper", async ([FromBody]Paper paper) =>
         values += $",{paper.Level}";
     }
     var sqlQueryStr = $"insert into paper ({keys}) values ({values})";
-    var sqlConn = new MySqlConnection(sqlConnCommand);
-    await sqlConn.OpenAsync();
     var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
     try
     {
-        var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
-        return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+        return new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
     }
     catch (Exception ex)
     {
-        return Results.BadRequest(new ResultMsg(-1, ex.Message));
+        return new ResultMsg(-1, ex.Message);
     }
-});
-app.MapDelete("/paper", async (int pid) =>
+}
+static async Task<ResultMsg> DeletePaper(MySqlConnection sqlConn, int pid)
 {
     var para_pid = new MySqlParameter("?pid", MySqlDbType.Int32) { Value = pid, Direction = ParameterDirection.Input };
     var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
-    var sqlConn = new MySqlConnection(sqlConnCommand);
-    await sqlConn.OpenAsync();
     var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "paper_del", CommandType = CommandType.StoredProcedure };
     sqlCommand.Parameters.Add(para_pid);
     sqlCommand.Parameters.Add(para_out);
     var exec_errno = await sqlCommand.ExecuteNonQueryAsync();
-    var res = new ResultMsg(Convert.ToInt32(para_out.Value) == 0 ? exec_errno : -1, "");
-    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
-});
-app.MapPut("/paper", async ([FromBody] Paper paper) =>
+    return new ResultMsg(Convert.ToInt32(para_out.Value) == 0 ? exec_errno : -1, "");
+
+}
+static async Task<ResultMsg> PutPaper(MySqlConnection sqlConn, Paper paper)
 {
     var sqlQueryStr = "update paper set ";
     var sets = new List<string>();
@@ -181,20 +175,95 @@ app.MapPut("/paper", async ([FromBody] Paper paper) =>
     {
         sqlQueryStr += string.Join(", ", sets);
         sqlQueryStr += $" where pid={pid}";
-        var sqlConn = new MySqlConnection(sqlConnCommand);
-        await sqlConn.OpenAsync();
         var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
         try
         {
             var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
-            return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+            return res;
         }
         catch (Exception ex)
         {
-            return Results.BadRequest(new ResultMsg(-1, ex.Message));
+            return new ResultMsg(-1, ex.Message);
         }
     }
-    return Results.BadRequest(new ResultMsg(-1, "update set is empty"));
+    return new ResultMsg(-1, "update set is empty");
+}
+static async Task<ResultMsg> PostPublishPaper(MySqlConnection sqlConn, int pid, List<PublishPaper> authors)
+{
+    foreach (var author in authors.Where(author => author.Pid != pid))
+        return new ResultMsg(-1, "different pid");
+    try
+    {
+        var sqlQueryStr = $"delete from publish_paper where publish_paper.pid={pid}";
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        await sqlCommand.ExecuteNonQueryAsync();
+    }
+    catch
+    {
+        return new ResultMsg(-1, "cannot delete outdated items");
+    }
+    
+    foreach (var author in authors)
+    {
+        var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = author.Tid, Direction = ParameterDirection.Input };
+        var para_pid = new MySqlParameter("?pid", MySqlDbType.Int32) { Value = pid, Direction = ParameterDirection.Input };
+        var para_ptrank = new MySqlParameter("?ptrank", MySqlDbType.Int32) { Value = author.Ptrank, Direction = ParameterDirection.Input };
+        var para_correspond = new MySqlParameter("?correspond", MySqlDbType.Int32) { Value = author.Correspond, Direction = ParameterDirection.Input };
+        var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+        var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "publish_paper_insert", CommandType = CommandType.StoredProcedure };
+        sqlCommand.Parameters.Add(para_tid);
+        sqlCommand.Parameters.Add(para_pid);
+        sqlCommand.Parameters.Add(para_ptrank);
+        sqlCommand.Parameters.Add(para_correspond);
+        sqlCommand.Parameters.Add(para_out);
+        var exec_res = await sqlCommand.ExecuteNonQueryAsync();
+        if (Convert.ToInt32(para_out.Value) == 0 && exec_res == 1) continue;
+        return new ResultMsg(-1, $"cannot insert author {author.Tid}");
+    }
+    return new ResultMsg(0, "");
+}
+
+app.MapPost("/paper", async ([FromBody]Paper paper) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await PostPaper(sqlConn, paper);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+});
+app.MapDelete("/paper", async (int pid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await DeletePaper(sqlConn, pid);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+});
+app.MapPut("/paper", async ([FromBody] Paper paper) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await PutPaper(sqlConn, paper);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
 });
 app.MapGet("/paper", async (
     int? pid, string? pname, string? psource, DateTime? pyear, int? ptype, int? level,
@@ -242,48 +311,45 @@ app.MapGet("/publish-paper/{pid}", async ([FromRoute]int pid) =>
     await reader.CloseAsync();
     await sqlTrans.CommitAsync();
     return Results.Ok(new PaperDetail(papers[0], publish_papers));
-
-
 });
 app.MapPost("/publish-paper/{pid}", async ([FromRoute]int pid, [FromBody] List<PublishPaper> authors) =>
 {
-    foreach (var author in authors.Where(author => author.Pid != pid))
-        return Results.BadRequest(author);
-
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
     using var sqlTrans = sqlConn.BeginTransaction();
-    try
-    {
-        var sqlQueryStr = $"delete from publish_paper where publish_paper.pid={pid}";
-        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
-        await sqlCommand.ExecuteNonQueryAsync();
-    }
-    catch
+    var res = await PostPublishPaper(sqlConn, pid, authors);
+    if (res.Result < 0)
     {
         await sqlTrans.RollbackAsync();
-        await sqlConn.CloseAsync();
-        return Results.BadRequest(pid);
+        return Results.BadRequest(res);
     }
-    
-    foreach (var author in authors)
+
+    await sqlTrans.CommitAsync();
+    return Results.Ok();
+});
+
+app.MapPost("/paper/detail/{pid}", async ([FromRoute]int pid, [FromBody] PaperDetail paper_detail) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+
+    var paper = paper_detail.Paper;
+    var paper_res = await PutPaper(sqlConn, paper);
+    if (paper_res.Result < 0)
     {
-        var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = author.Tid, Direction = ParameterDirection.Input };
-        var para_pid = new MySqlParameter("?pid", MySqlDbType.Int32) { Value = pid, Direction = ParameterDirection.Input };
-        var para_ptrank = new MySqlParameter("?ptrank", MySqlDbType.Int32) { Value = author.Ptrank, Direction = ParameterDirection.Input };
-        var para_correspond = new MySqlParameter("?correspond", MySqlDbType.Int32) { Value = author.Correspond, Direction = ParameterDirection.Input };
-        var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
-        var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "publish_paper_insert", CommandType = CommandType.StoredProcedure };
-        sqlCommand.Parameters.Add(para_tid);
-        sqlCommand.Parameters.Add(para_pid);
-        sqlCommand.Parameters.Add(para_ptrank);
-        sqlCommand.Parameters.Add(para_correspond);
-        sqlCommand.Parameters.Add(para_out);
-        var exec_res = await sqlCommand.ExecuteNonQueryAsync();
-        if (Convert.ToInt32(para_out.Value) == 0 && exec_res == 1) continue;
         await sqlTrans.RollbackAsync();
-        return Results.BadRequest(author);
+        return Results.BadRequest(paper_res);
     }
+
+    var authors = paper_detail.Authors;
+    var res = await PostPublishPaper(sqlConn, pid, authors);
+    if (res.Result < 0)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(res);
+    }
+
     await sqlTrans.CommitAsync();
     return Results.Ok();
 });

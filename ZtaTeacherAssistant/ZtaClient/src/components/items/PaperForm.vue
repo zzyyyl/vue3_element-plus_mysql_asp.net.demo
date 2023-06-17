@@ -10,7 +10,6 @@ type ElFormCtx = InstanceType<typeof ElForm>
 
 // const emits = defineEmits(['get', 'post', 'put'])
 const level_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'CCF-A' },
   { value: 2, label: 'CCF-B' },
   { value: 3, label: 'CCF-C' },
@@ -19,7 +18,6 @@ const level_options = [
   { value: 6, label: '无级别' }
 ]
 const ptype_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'full paper' },
   { value: 2, label: 'short paper' },
   { value: 3, label: 'poster paper' },
@@ -112,15 +110,15 @@ export default defineComponent({
             <string-input v-model="paper_params.psource" id="psource" />
           </el-form-item>
           <el-form-item label="论文年份&nbsp;" prop="pyear">
-            <string-input v-model="paper_params.pyear" id="pyear" />
+            <el-date-picker type="date" value-format="YYYY-MM-DD" v-model="paper_params.pyear" id="pyear" style="width: 98%;" />
           </el-form-item>
         </div>
       </el-col>
       <el-col :span="4">
-        <div style="text-align: center;">
+        <div style="text-align: center;"><br/><br/>
           <el-button @click="submit(paper_form_ref, 'get')">检 索</el-button><br/><br/>
           <el-button @click="submit(paper_form_ref, 'post')">登 记</el-button><br/><br/>
-          <el-button @click="submit(paper_form_ref, 'put')">修 改</el-button><br/><br/>
+          <!-- <el-button @click="submit(paper_form_ref, 'put')">修 改</el-button><br/><br/> -->
           <el-button type="danger" plain @click="paper_form_ref.resetFields()">清 空</el-button>
         </div>
       </el-col>

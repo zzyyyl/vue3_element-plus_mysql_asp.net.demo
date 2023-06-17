@@ -34,6 +34,9 @@ export default defineComponent({
       console.log('clear')
       this.choice = null
     }
+  },
+  mounted() {
+    this.choice = this.modelValue
   }
 })
 </script>

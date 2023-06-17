@@ -245,22 +245,6 @@ span.menutext a:hover {
   text-decoration: none;
   color: #4f5f4f;
 }
-input.pageinput {
-  font-family: 'Code Normal Font';
-  text-align: center;
-  resize: none;
-  width: 4rem;
-  height: 2.5rem;
-  border-radius: 2px;
-  border: 1px solid gray;
-  font-size: 14px;
-}
-button.pageinput {
-  text-align: center;
-  resize: none;
-  width: 4rem;
-  height: 2.5rem;
-}
 .inputli {
   font-family: 'Code Normal Font';
   text-align: center;

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import DangerButton from '../components/items/DangerButton.vue'
 import NumberInput from '@/components/items/NumberInput.vue'
+import SelectOptions from '@/components/items/SelectOptions.vue'
 
 const level_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'CCF-A' },
   { value: 2, label: 'CCF-B' },
   { value: 3, label: 'CCF-C' },
@@ -12,7 +12,6 @@ const level_options = [
   { value: 6, label: '无级别' }
 ]
 const ptype_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'full paper' },
   { value: 2, label: 'short paper' },
   { value: 3, label: 'poster paper' },
@@ -51,7 +50,8 @@ export default {
     return {
       papers: {} as iPaperDetail,
       origin_papers: {} as iPaperDetail,
-      editable: false
+      author_editable: false,
+      paper_editable: false
     }
   },
   methods: {
@@ -85,22 +85,49 @@ export default {
       this.papers.authors[index].correspond = value
     },
     //放弃更改
-    onReset() {
-      this.editable = false
-      this.papers = JSON.parse(JSON.stringify(this.origin_papers))
+    onAuthorReset() {
+      this.author_editable = false
+      this.papers.authors = JSON.parse(JSON.stringify(this.origin_papers.authors))
     },
     //提交更改
-    onSubmit() {
+    onAuthorSubmit() {
       const pid = this.$route.params.pid
       axios.post(`/api/publish-paper/${pid}`, this.papers.authors)
         .then((res: any) => {
-          this.editable = false
+          this.author_editable = false
           ElMessage.success({showClose: true,message: '论文信息更新成功'})
-          this.origin_papers = JSON.parse(JSON.stringify(this.papers))
+          this.origin_papers.authors = JSON.parse(JSON.stringify(this.papers.authors))
         })
         .catch((err: any) => {
           ElMessage.error({showClose: true,message: `论文信息更新失败，${err.response.data.msg ?? err}`})
         })
+    },
+    onPaperReset() {
+      this.paper_editable = false
+      this.papers.paper = JSON.parse(JSON.stringify(this.origin_papers.paper))
+    },
+    onPaperSubmit() {
+      const pid = this.$route.params.pid
+      axios.put('/api/paper', {
+        pid: pid ?? null,
+        pname: this.papers.paper.pname || null,
+        psource: this.papers.paper.psource || null,
+        pyear: this.papers.paper.pyear || null,
+        ptype: this.papers.paper.ptype || null,
+        level: this.papers.paper.level || null
+      }).then(() => {
+        this.paper_editable = false
+        ElMessage.success({showClose: true,message: `论文信息更新成功`, duration: 1000})
+        let key: keyof iPaper
+        for (key in this.papers.paper) {
+          let old_val = this.origin_papers.paper[key]
+          if (old_val !== null)
+            (<typeof old_val>this.papers.paper[key]) ??= old_val
+        }
+        this.origin_papers.paper = JSON.parse(JSON.stringify(this.papers.paper))
+      }).catch((err: any) => {
+        ElMessage.error({showClose: true,message: `论文信息更新失败，${err.response.data.msg ?? err}`})
+      })
     }
   },
   mounted() {
@@ -130,69 +157,114 @@ export default {
   <div class='blocktext Plaintext'>
     <el-table :data="[papers.paper]">
       <el-table-column fixed prop="pid" label="编号" width="60"></el-table-column>
-      <el-table-column prop="pname" label="名称" width="auto"></el-table-column>
-      <el-table-column prop="psource" label="来源" width="100"></el-table-column>
-      <el-table-column prop="pyear" label="年份" width="120"></el-table-column>
-      <el-table-column prop="ptype" label="类型" width="120">
+      <el-table-column prop="pname" label="名称" width="auto">
         <template #default="scope">
-          {{ ptype_options.find(type => type.value === scope.row?.ptype)?.label }}
+          <el-input v-if="paper_editable" v-model="papers.paper.pname"></el-input>
+          <span v-else>{{ scope.row?.pname }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="level" label="级别" width="120">
+      <el-table-column prop="psource" label="来源" width="100">
         <template #default="scope">
-          {{ level_options.find(level => level.value === scope.row?.level)?.label }}
+          <el-input v-if="paper_editable" v-model="papers.paper.psource"></el-input>
+          <span v-else>{{ scope.row?.psource }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="pyear" label="年份" width="150">
+        <template #default="scope">
+          <el-date-picker v-if="paper_editable" type="date" value-format="YYYY-MM-DD" v-model="papers.paper.pyear" style="width: auto;" />
+          <span v-else>{{ scope.row?.pyear }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="ptype" label="类型" width="150">
+        <template #default="scope">
+          <select-options
+            v-if="paper_editable"
+            v-model="papers.paper.ptype"
+            :options="ptype_options" />
+          <span v-else>{{ ptype_options.find(type => type.value === scope.row?.ptype)?.label }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="level" label="级别" width="150">
+        <template #default="scope">
+          <select-options
+            v-if="paper_editable"
+            v-model="papers.paper.level"
+            :options="level_options" />
+          <span v-else>{{ level_options.find(level => level.value === scope.row?.level)?.label }}</span>
         </template>
       </el-table-column>
     </el-table>
+    <el-row justify="space-between">
+      <el-col v-if="!paper_editable">
+        <el-button
+          style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
+          @click="paper_editable=true">启用编辑</el-button>
+      </el-col>
+      <el-col :span="11" v-if="paper_editable">
+        <danger-button
+          label="放弃更改"
+          message="是否放弃更改？"
+          style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
+          @commit="onPaperReset" />
+      </el-col>
+      <el-col :span="11" v-if="paper_editable">
+        <danger-button
+          label="确认更改"
+          message="是否确认更改？"
+          style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
+          @commit="onPaperSubmit" />
+      </el-col>
+    </el-row>
+
     <br />
     <el-table :data="papers.authors" max-height="500">
       <el-table-column label="作者排名">
         <template #default="scope">
-          <number-input v-if="editable" class="inputli" v-model="scope.row.ptrank" placeholder="请输入作者排名" @blur="sortAuthor(scope.$index)" />
+          <number-input v-if="author_editable" class="inputli" v-model="scope.row.ptrank" placeholder="请输入作者排名" @blur="sortAuthor(scope.$index)" />
           <el-tag v-else>第 {{ scope.row.ptrank }} 作者</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="tid" label="作者编号">
         <template #default="{row}">
-          <el-input v-if="editable" class="inputli" v-model="row.tid" placeholder="请输入作者编号"></el-input>
+          <el-input v-if="author_editable" class="inputli" v-model="row.tid" placeholder="请输入作者编号"></el-input>
           <label v-else> {{ row.tid }} </label>
         </template>
       </el-table-column>
       <el-table-column label="是否通讯作者">
         <template #default="scope">
-          <el-tag v-if="scope.row.correspond" @click="editable && handleCorrespond(scope.$index, false)">通讯作者</el-tag>
-          <el-tag v-else type="info" @click="editable && handleCorrespond(scope.$index)">非通讯作者</el-tag>
+          <el-tag v-if="scope.row.correspond" @click="author_editable && handleCorrespond(scope.$index, false)">通讯作者</el-tag>
+          <el-tag v-else type="info" @click="author_editable && handleCorrespond(scope.$index)">非通讯作者</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="100">
         <template #default="scope">
-          <danger-button v-if="editable" label="删 除" message="是否删除该作者？" @commit="removeAuthor(scope.$index)"/>
+          <danger-button v-if="author_editable" label="删 除" message="是否删除该作者？" @commit="removeAuthor(scope.$index)"/>
           <el-button v-else plain type="primary" @click="$router.push(`/teacher/${scope.row.tid}`)">详 情</el-button>
         </template>
       </el-table-column>
     </el-table>
     <el-row justify="space-between">
-      <el-col v-if="!editable">
+      <el-col v-if="!author_editable">
         <el-button
           style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
-          @click="editable=true">启用编辑</el-button>
+          @click="author_editable=true">启用编辑</el-button>
       </el-col>
-      <el-col :span="7" v-if="editable">
+      <el-col :span="7" v-if="author_editable">
         <el-button style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0" @click="onAddAuthor">增加作者</el-button>
       </el-col>
-      <el-col :span="7" v-if="editable">
+      <el-col :span="7" v-if="author_editable">
         <danger-button
           label="放弃更改"
           message="是否放弃更改？"
           style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
-          @commit="onReset" />
+          @commit="onAuthorReset" />
       </el-col>
-      <el-col :span="7" v-if="editable">
+      <el-col :span="7" v-if="author_editable">
         <danger-button
           label="确认更改"
           message="是否确认更改？"
           style="width: 100%;height: 2.5rem;margin: 1.5rem 0 .5rem 0"
-          @commit="onSubmit" />
+          @commit="onAuthorSubmit" />
       </el-col>
     </el-row>
     <!-- {{ papers }} -->

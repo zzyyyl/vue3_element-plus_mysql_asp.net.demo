@@ -2,7 +2,6 @@
 import DangerButton from '../components/items/DangerButton.vue'
 import PaperForm from '../components/items/PaperForm.vue'
 const level_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'CCF-A' },
   { value: 2, label: 'CCF-B' },
   { value: 3, label: 'CCF-C' },
@@ -11,7 +10,6 @@ const level_options = [
   { value: 6, label: '无级别' }
 ]
 const ptype_options = [
-  { value: 0, label: '任意' },
   { value: 1, label: 'full paper' },
   { value: 2, label: 'short paper' },
   { value: 3, label: 'poster paper' },
@@ -21,7 +19,7 @@ const ptype_options = [
 
 <script lang="ts">
 import axios from 'axios'
-import { ElNotification } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 interface iPaperParams {
   pid: number | string | null,
@@ -51,16 +49,16 @@ export default {
           level: paper_params.level || null
         },
       }).then((res: any) => {
-        ElNotification.success({message: `论文检索成功`, duration: 1000})
+        ElMessage.success({showClose: true, message: `论文检索成功`, duration: 1000})
         this.papers = res.data
       }).catch((err: any) => {
-        ElNotification.error({message: `论文检索失败，${err.response.data.msg ?? err}`})
+        ElMessage.error({showClose: true, message: `论文检索失败，${err.response.data.msg ?? err}`})
       })
     },
     postPaper(paper_params: iPaperParams) {
       const pid = paper_params.pid
       if (pid === null) {
-        ElNotification.info({message: '请输入论文编号', duration: 3000})
+        ElMessage.info({showClose: true, message: '请输入论文编号', duration: 3000})
         return
       }
       // post /api/paper
@@ -73,15 +71,15 @@ export default {
         level: paper_params.level || null
       }).then(() => {
         this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
-        ElNotification.success({message: `论文 ${pid} 登记成功`, duration: 1000})
+        ElMessage.success({showClose: true, message: `论文 ${pid} 登记成功`, duration: 1000})
       }).catch((err: any) => {
-        ElNotification.error({message: `论文 ${pid} 登记失败，${err.response.data.msg ?? err}`})
+        ElMessage.error({showClose: true, message: `论文 ${pid} 登记失败，${err.response.data.msg ?? err}`})
       })
     },
     putPaper(paper_params: iPaperParams) {
       const pid = paper_params.pid
       if (pid === null) {
-        ElNotification.info({message: '请输入论文编号', duration: 3000})
+        ElMessage.info({showClose: true, message: '请输入论文编号', duration: 3000})
         return
       }
       // put /api/paper
@@ -93,15 +91,15 @@ export default {
         ptype: paper_params.ptype || null,
         level: paper_params.level || null
       }).then(() => {
-        ElNotification.success({message: `论文 ${pid} 修改成功`, duration: 1000})
+        ElMessage.success({showClose: true, message: `论文 ${pid} 修改成功`, duration: 1000})
         this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
       }).catch((err: any) => {
-        ElNotification.error({message: `论文 ${pid} 修改失败，${err.response.data.msg ?? err}`})
+        ElMessage.error({showClose: true, message: `论文 ${pid} 修改失败，${err.response.data.msg ?? err}`})
       })
     },
     deletePaper(index: number) {
       if (!index && index !== 0) {
-        ElNotification.info({message: '请选择要删除的论文', duration: 3000})
+        ElMessage.info({showClose: true, message: '请选择要删除的论文', duration: 3000})
         return
       }
       let pid = this.papers[index].pid
@@ -109,10 +107,10 @@ export default {
       // delete /api/paper
       axios.delete('/api/paper', { params: { pid: pid }})
         .then(() => {
-          ElNotification.success({message: `论文 ${pid} 删除成功`, duration: 1000})
+          ElMessage.success({showClose: true, message: `论文 ${pid} 删除成功`, duration: 1000})
         })
         .catch((err: any) => {
-          ElNotification.error({message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`})
+          ElMessage.error({showClose: true, message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`})
         })
     }
   }
