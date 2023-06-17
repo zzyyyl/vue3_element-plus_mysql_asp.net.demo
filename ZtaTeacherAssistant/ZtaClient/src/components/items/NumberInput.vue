@@ -21,16 +21,21 @@ export default defineComponent({
       num: null as number | null
     }
   },
-  methods: {
-    updateNum() {
-      console.log('update', this.num)
-      if (!this.num && this.num !== 0) {
+  watch: {
+    num(val: number | null) {
+      if (!val && val !== 0) {
         this.num = null
       } else {
-        this.num = Math.max(this.min, Math.min(this.max, this.num))
+        this.num = Math.max(this.min, Math.min(this.max, val))
       }
       this.$emit('update:modelValue', this.num)
+    },
+    modelValue(val: number | null) {
+      this.num = val
     }
+  },
+  mounted() {
+    this.num = this.modelValue
   }
 })
 </script>
@@ -38,7 +43,6 @@ export default defineComponent({
 <template>
   <el-input
     style="width: 100%"
-    type="number"
     :min="min" :max="max"
-    v-model="num" @input="updateNum" />
+    v-model="num" />
 </template>
