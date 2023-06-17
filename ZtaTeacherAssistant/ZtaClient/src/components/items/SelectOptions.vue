@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent } from 'vue'
 
 export default defineComponent({
   emits: ['update:modelValue'],
@@ -7,13 +7,13 @@ export default defineComponent({
     modelValue: {},
     options: {
       type: Array<{
-        value: any,
+        value: any
         label: string
       }>,
       default: []
     }
   },
-  data() : { choice: any } {
+  data(): { choice: any } {
     return {
       choice: null
     }
@@ -45,6 +45,7 @@ export default defineComponent({
       v-for="item in options"
       :key="item.value"
       :label="item.label"
-      :value="item.value" />
+      :value="item.value"
+    />
   </el-select>
 </template>

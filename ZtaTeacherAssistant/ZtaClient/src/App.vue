@@ -19,7 +19,7 @@ document.title = `ZTA - ${route.path == '/' ? '首页' : route.path.slice(1)}`
 
 watch(
   () => route.path,
-  async newParam => {
+  async (newParam) => {
     document.title = `ZTA - ${newParam == '/' ? '首页' : newParam.slice(1)}`
   }
 )
@@ -31,7 +31,8 @@ watch(
       <nav class="maintitle">
         <ul>
           <li class="thick">
-            <router-link to="/">ZTA</router-link></li>
+            <router-link to="/">ZTA</router-link>
+          </li>
           <li v-for="(value, key) in models" :key="key" class="Code">
             <router-link :to="value">{{ key }}</router-link>
           </li>
@@ -53,5 +54,4 @@ watch(
   </el-container>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

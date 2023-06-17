@@ -22,14 +22,14 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 interface iPaperParams {
-  pid: number | string | null,
-  pname: string | null,
-  psource: string | null,
-  pyear: string | null,
-  ptype: number | null,
-  level: number | null,
-  orderby: 'pid' | 'pname' | 'pyear' | 'ptype' | 'level' | 'psource',
-  desc: boolean,
+  pid: number | string | null
+  pname: string | null
+  psource: string | null
+  pyear: string | null
+  ptype: number | null
+  level: number | null
+  orderby: 'pid' | 'pname' | 'pyear' | 'ptype' | 'level' | 'psource'
+  desc: boolean
   limit: number
 }
 
@@ -37,7 +37,7 @@ export default {
   data() {
     return {
       papers: [] as iPaperParams[],
-      title: '论文检索',
+      title: '论文检索'
     }
   },
   methods: {
@@ -45,82 +45,104 @@ export default {
       let pyear_from = paper_params.pyear?.at(0) ?? null
       let pyear_to = paper_params.pyear?.at(1) ?? null
       // get /api/paper
-      axios.get('/api/paper', {
-        params: {
-          pid: paper_params.pid ?? null,
-          pname: paper_params.pname || null,
-          psource: paper_params.psource || null,
-          pyear_from: pyear_from,
-          pyear_to: pyear_to,
-          ptype: paper_params.ptype || null,
-          level: paper_params.level || null,
-          orderby: paper_params.orderby || null,
-          desc: paper_params.desc || null,
-          limit: paper_params.limit || null
-        },
-      }).then((res: any) => {
-        ElMessage.success({showClose: true, message: `论文检索成功`, duration: 1000})
-        this.papers = res.data
-      }).catch((err: any) => {
-        ElMessage.error({showClose: true, message: `论文检索失败，${err.response.data.msg ?? err}`})
-      })
+      axios
+        .get('/api/paper', {
+          params: {
+            pid: paper_params.pid ?? null,
+            pname: paper_params.pname || null,
+            psource: paper_params.psource || null,
+            pyear_from: pyear_from,
+            pyear_to: pyear_to,
+            ptype: paper_params.ptype || null,
+            level: paper_params.level || null,
+            orderby: paper_params.orderby || null,
+            desc: paper_params.desc || null,
+            limit: paper_params.limit || null
+          }
+        })
+        .then((res: any) => {
+          ElMessage.success({ showClose: true, message: `论文检索成功`, duration: 1000 })
+          this.papers = res.data
+        })
+        .catch((err: any) => {
+          ElMessage.error({
+            showClose: true,
+            message: `论文检索失败，${err.response.data.msg ?? err}`
+          })
+        })
     },
     postPaper(paper_params: iPaperParams) {
       const pid = paper_params.pid
       if (pid === null) {
-        ElMessage.info({showClose: true, message: '请输入论文编号', duration: 3000})
+        ElMessage.info({ showClose: true, message: '请输入论文编号', duration: 3000 })
         return
       }
       // post /api/paper
-      axios.post('/api/paper', {
-        pid: pid ?? null,
-        pname: paper_params.pname || null,
-        psource: paper_params.psource || null,
-        pyear: paper_params.pyear || null,
-        ptype: paper_params.ptype || null,
-        level: paper_params.level || null
-      }).then(() => {
-        this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
-        ElMessage.success({showClose: true, message: `论文 ${pid} 登记成功`, duration: 1000})
-      }).catch((err: any) => {
-        ElMessage.error({showClose: true, message: `论文 ${pid} 登记失败，${err.response.data.msg ?? err}`})
-      })
+      axios
+        .post('/api/paper', {
+          pid: pid ?? null,
+          pname: paper_params.pname || null,
+          psource: paper_params.psource || null,
+          pyear: paper_params.pyear || null,
+          ptype: paper_params.ptype || null,
+          level: paper_params.level || null
+        })
+        .then(() => {
+          this.papers = [JSON.parse(JSON.stringify(paper_params))]
+          ElMessage.success({ showClose: true, message: `论文 ${pid} 登记成功`, duration: 1000 })
+        })
+        .catch((err: any) => {
+          ElMessage.error({
+            showClose: true,
+            message: `论文 ${pid} 登记失败，${err.response.data.msg ?? err}`
+          })
+        })
     },
     putPaper(paper_params: iPaperParams) {
       const pid = paper_params.pid
       if (pid === null) {
-        ElMessage.info({showClose: true, message: '请输入论文编号', duration: 3000})
+        ElMessage.info({ showClose: true, message: '请输入论文编号', duration: 3000 })
         return
       }
       // put /api/paper
-      axios.put('/api/paper', {
-        pid: pid ?? null,
-        pname: paper_params.pname || null,
-        psource: paper_params.psource || null,
-        pyear: paper_params.pyear || null,
-        ptype: paper_params.ptype || null,
-        level: paper_params.level || null
-      }).then(() => {
-        ElMessage.success({showClose: true, message: `论文 ${pid} 修改成功`, duration: 1000})
-        this.papers = [ JSON.parse(JSON.stringify(paper_params)) ]
-      }).catch((err: any) => {
-        ElMessage.error({showClose: true, message: `论文 ${pid} 修改失败，${err.response.data.msg ?? err}`})
-      })
+      axios
+        .put('/api/paper', {
+          pid: pid ?? null,
+          pname: paper_params.pname || null,
+          psource: paper_params.psource || null,
+          pyear: paper_params.pyear || null,
+          ptype: paper_params.ptype || null,
+          level: paper_params.level || null
+        })
+        .then(() => {
+          ElMessage.success({ showClose: true, message: `论文 ${pid} 修改成功`, duration: 1000 })
+          this.papers = [JSON.parse(JSON.stringify(paper_params))]
+        })
+        .catch((err: any) => {
+          ElMessage.error({
+            showClose: true,
+            message: `论文 ${pid} 修改失败，${err.response.data.msg ?? err}`
+          })
+        })
     },
     deletePaper(index: number) {
       if (!index && index !== 0) {
-        ElMessage.info({showClose: true, message: '请选择要删除的论文', duration: 3000})
+        ElMessage.info({ showClose: true, message: '请选择要删除的论文', duration: 3000 })
         return
       }
       let pid = this.papers[index].pid
       this.papers.splice(index, 1)
       // delete /api/paper
-      axios.delete('/api/paper', { params: { pid: pid }})
+      axios
+        .delete('/api/paper', { params: { pid: pid } })
         .then(() => {
-          ElMessage.success({showClose: true, message: `论文 ${pid} 删除成功`, duration: 1000})
+          ElMessage.success({ showClose: true, message: `论文 ${pid} 删除成功`, duration: 1000 })
         })
         .catch((err: any) => {
-          ElMessage.error({showClose: true, message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`})
+          ElMessage.error({
+            showClose: true,
+            message: `论文 ${pid} 删除失败，${err.response.data.msg ?? err}`
+          })
         })
     },
     onMethodChange(method: string) {
@@ -128,21 +150,17 @@ export default {
     }
   }
 }
-
 </script>
 
 <template>
-  <div class='blocktitle thick'>
+  <div class="blocktitle thick">
     {{ title }}
   </div>
-  <div class='blocktext Plaintext'>
-    <paper-form
-      @get="getPaper"
-      @post="postPaper"
-      @method-change="onMethodChange"/>
+  <div class="blocktext Plaintext">
+    <paper-form @get="getPaper" @post="postPaper" @method-change="onMethodChange" />
   </div>
-  <div v-if="papers.length" class='blocktitle thick'>查询结果</div>
-  <div v-if="papers.length" class='blocktext'>
+  <div v-if="papers.length" class="blocktitle thick">查询结果</div>
+  <div v-if="papers.length" class="blocktext">
     <el-table :data="papers" max-height="400" stripe>
       <el-table-column fixed prop="pid" label="编号" sortable width="80"></el-table-column>
       <el-table-column prop="pname" label="名称" width="120"></el-table-column>
@@ -150,18 +168,24 @@ export default {
       <el-table-column prop="pyear" label="年份" sortable width="120"></el-table-column>
       <el-table-column prop="ptype" label="类型" sortable width="120">
         <template #default="scope">
-          {{ ptype_options.find(type => type.value === scope.row.ptype)?.label }}
+          {{ ptype_options.find((type) => type.value === scope.row.ptype)?.label }}
         </template>
       </el-table-column>
       <el-table-column prop="level" label="级别" sortable width="120">
         <template #default="scope">
-          {{ level_options.find(level => level.value === scope.row.level)?.label }}
+          {{ level_options.find((level) => level.value === scope.row.level)?.label }}
         </template>
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="100">
         <template #default="scope">
-          <el-button plain type="primary" @click="$router.push(`/paper/${scope.row.pid}`)">详 情</el-button>
-          <danger-button label="删 除" message="是否删除该论文？" @commit="deletePaper(scope.$index)"/>
+          <el-button plain type="primary" @click="$router.push(`/paper/${scope.row.pid}`)"
+            >详 情</el-button
+          >
+          <danger-button
+            label="删 除"
+            message="是否删除该论文？"
+            @commit="deletePaper(scope.$index)"
+          />
         </template>
       </el-table-column>
     </el-table>
@@ -169,6 +193,9 @@ export default {
 </template>
 
 <style scoped>
-.inputli{width: 99%;border: 0;}
+.inputli {
+  width: 99%;
+  border: 0;
+}
 /* button{width: 5rem;height: 2.5rem;margin:.6rem 0} */
 </style>

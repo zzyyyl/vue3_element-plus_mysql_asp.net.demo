@@ -20,16 +20,18 @@ export default defineComponent({
 <script setup lang="ts">
 import { defineProps, type StyleValue } from 'vue'
 
-const props = withDefaults(defineProps<{
-  message: string,
-  label: string,
-  style?: StyleValue,
-  type?: string,
-}>(), {
-  style: 'margin: .4rem 0',
-  type: 'danger'
-})
-
+const props = withDefaults(
+  defineProps<{
+    message: string
+    label: string
+    style?: StyleValue
+    type?: string
+  }>(),
+  {
+    style: 'margin: .4rem 0',
+    type: 'danger'
+  }
+)
 </script>
 
 <template>
@@ -40,7 +42,9 @@ const props = withDefaults(defineProps<{
       <el-button size="small" type="primary" @click="handleClick(true)">确 定</el-button>
     </div>
     <template #reference>
-      <el-button plain :type="type" @click="popoverVisible = true" :style="style">{{ label }}</el-button>
+      <el-button plain :type="type" @click="popoverVisible = true" :style="style">{{
+        label
+      }}</el-button>
     </template>
   </el-popover>
 </template>

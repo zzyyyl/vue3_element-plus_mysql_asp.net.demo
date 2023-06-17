@@ -10,26 +10,24 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
-      path: "/",
-      component: () => import("./views/MainView.vue"),
+      path: '/',
+      component: () => import('./views/MainView.vue')
     },
     {
-      path: "/search/paper",
-      component: () => import("./views/PaperSearchView.vue"),
+      path: '/search/paper',
+      component: () => import('./views/PaperSearchView.vue')
     },
     {
-      path: "/paper/:pid",
-      component: () => import("./views/PaperDetailView.vue"),
+      path: '/paper/:pid',
+      component: () => import('./views/PaperDetailView.vue')
     },
     {
-      path: "/search/teacher",
-      component: () => {},//() => import("./components/blocks/TeacherBlock.vue"),
-    },
+      path: '/search/teacher',
+      component: () => {} //() => import("./components/blocks/TeacherBlock.vue"),
+    }
   ]
 })
 
 const app = createApp(App)
 
-app.use(router)
-  .use(ElementPlus)
-  .mount('#app')
+app.use(router).use(ElementPlus).mount('#app')

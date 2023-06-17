@@ -41,8 +41,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <el-input
-    style="width: 100%"
-    :min="min" :max="max"
-    v-model="num" />
+  <el-input style="width: 100%" :min="min" :max="max" v-model="num" />
 </template>
