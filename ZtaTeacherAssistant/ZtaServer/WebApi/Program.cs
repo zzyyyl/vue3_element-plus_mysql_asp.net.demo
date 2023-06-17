@@ -100,7 +100,7 @@ static async Task<List<Paper>?> GetPaper(
         }
         return papers;
     }
-    catch(Exception ex)
+    catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
         return null;
@@ -202,7 +202,7 @@ static async Task<ResultMsg> PostPublishPaper(MySqlConnection sqlConn, int pid, 
     {
         return new ResultMsg(-1, "cannot delete outdated items");
     }
-    
+
     foreach (var author in authors)
     {
         var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = author.Tid, Direction = ParameterDirection.Input };
@@ -223,7 +223,7 @@ static async Task<ResultMsg> PostPublishPaper(MySqlConnection sqlConn, int pid, 
     return new ResultMsg(0, "");
 }
 
-app.MapPost("/paper", async ([FromBody]Paper paper) =>
+app.MapPost("/paper", async ([FromBody] Paper paper) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
     try
@@ -283,7 +283,7 @@ app.MapGet("/paper", async (
     return papers is null ? Results.NotFound() : Results.Ok(papers);
 });
 
-app.MapGet("/publish-paper/{pid}", async ([FromRoute]int pid) =>
+app.MapGet("/publish-paper/{pid}", async ([FromRoute] int pid) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
@@ -312,7 +312,7 @@ app.MapGet("/publish-paper/{pid}", async ([FromRoute]int pid) =>
     await sqlTrans.CommitAsync();
     return Results.Ok(new PaperDetail(papers[0], publish_papers));
 });
-app.MapPost("/publish-paper/{pid}", async ([FromRoute]int pid, [FromBody] List<PublishPaper> authors) =>
+app.MapPost("/publish-paper/{pid}", async ([FromRoute] int pid, [FromBody] List<PublishPaper> authors) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
@@ -327,8 +327,8 @@ app.MapPost("/publish-paper/{pid}", async ([FromRoute]int pid, [FromBody] List<P
     await sqlTrans.CommitAsync();
     return Results.Ok();
 });
-
-app.MapPost("/paper/detail/{pid}", async ([FromRoute]int pid, [FromBody] PaperDetail paper_detail) =>
+/*
+app.MapPost("/paper/detail/{pid}", async ([FromRoute] int pid, [FromBody] PaperDetail paper_detail) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
@@ -353,6 +353,7 @@ app.MapPost("/paper/detail/{pid}", async ([FromRoute]int pid, [FromBody] PaperDe
     await sqlTrans.CommitAsync();
     return Results.Ok();
 });
+*/
 #endregion
 
 #region teacher
