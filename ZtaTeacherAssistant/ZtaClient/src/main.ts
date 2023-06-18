@@ -22,6 +22,14 @@ const router = createRouter({
       component: () => import('./views/PaperDetailView.vue')
     },
     {
+      path: '/search/project',
+      component: () => import('./views/ProjectSearchView.vue')
+    },
+    {
+      path: '/project/:jid',
+      component: () => import('./views/ProjectDetailView.vue')
+    },
+    {
       path: '/search/teacher',
       component: () => {} //() => import("./components/blocks/TeacherBlock.vue"),
     }

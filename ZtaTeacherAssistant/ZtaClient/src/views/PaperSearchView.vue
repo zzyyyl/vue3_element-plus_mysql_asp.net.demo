@@ -98,33 +98,6 @@ export default {
           })
         })
     },
-    putPaper(paper_params: iPaperParams) {
-      const pid = paper_params.pid
-      if (pid === null) {
-        ElMessage.info({ showClose: true, message: '请输入论文编号', duration: 3000 })
-        return
-      }
-      // put /api/paper
-      axios
-        .put('/api/paper', {
-          pid: pid ?? null,
-          pname: paper_params.pname || null,
-          psource: paper_params.psource || null,
-          pyear: paper_params.pyear || null,
-          ptype: paper_params.ptype || null,
-          level: paper_params.level || null
-        })
-        .then(() => {
-          ElMessage.success({ showClose: true, message: `论文 ${pid} 修改成功`, duration: 1000 })
-          this.papers = [JSON.parse(JSON.stringify(paper_params))]
-        })
-        .catch((err: any) => {
-          ElMessage.error({
-            showClose: true,
-            message: `论文 ${pid} 修改失败，${err.response.data.msg ?? err}`
-          })
-        })
-    },
     deletePaper(index: number) {
       if (!index && index !== 0) {
         ElMessage.info({ showClose: true, message: '请选择要删除的论文', duration: 3000 })

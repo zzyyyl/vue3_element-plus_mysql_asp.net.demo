@@ -5,8 +5,10 @@ import { watch } from 'vue'
 
 const route = useRoute()
 
-const models = {
+const entities = {
   paper: '/search/paper',
+  project: '/search/project',
+  course: '/search/course',
   teacher: '/search/teacher'
 }
 
@@ -33,7 +35,7 @@ watch(
           <li class="thick">
             <router-link to="/">ZTA</router-link>
           </li>
-          <li v-for="(value, key) in models" :key="key" class="Code">
+          <li v-for="(value, key) in entities" :key="key" class="Code">
             <router-link :to="value">{{ key }}</router-link>
           </li>
         </ul>
