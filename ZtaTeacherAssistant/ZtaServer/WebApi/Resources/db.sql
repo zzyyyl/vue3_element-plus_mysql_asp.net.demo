@@ -5,7 +5,7 @@ alter table project_undertaken drop foreign key FK_PROJECT__PROJECT_U_PROJECT;
 alter table publish_paper drop foreign key FK_PUBLISH__PUBLISH_P_TEACHER;
 alter table publish_paper drop foreign key FK_PUBLISH__PUBLISH_P_PAPER;
 
-drop table if exists class;
+drop table if exists course;
 drop table if exists course_taught;
 drop table if exists paper;
 drop table if exists project;
@@ -14,9 +14,9 @@ drop table if exists publish_paper;
 drop table if exists teacher;
 
 /*==============================================================*/
-/* Table: class                                                 */
+/* Table: course                                                 */
 /*==============================================================*/
-create table class
+create table course
 (
    cid                  char(255) not null,
    cname                char(255),
@@ -66,8 +66,7 @@ create table project
    edyear               int,
    primary key (jid)
 );
-alter table project
-add constraint check_years check (styear <= edyear);
+alter table project add constraint check_years check (styear <= edyear);
 
 /*==============================================================*/
 /* Table: project_undertaken                                    */
@@ -109,7 +108,7 @@ alter table course_taught add constraint FK_COURSE_T_COURSE_TA_TEACHER foreign k
       references teacher (tid) on delete restrict on update restrict;
 
 alter table course_taught add constraint FK_COURSE_T_COURSE_TA_CLASS foreign key (cid)
-      references class (cid) on delete restrict on update restrict;
+      references course (cid) on delete restrict on update restrict;
 
 alter table project_undertaken add constraint FK_PROJECT__PROJECT_U_TEACHER foreign key (tid)
       references teacher (tid) on delete restrict on update restrict;
@@ -297,12 +296,12 @@ begin
     declare s int default 0;
     declare continue handler for sqlexception set s = 1;
     start transaction;
-    if not exists(select * from class where class.cid = cid) then
+    if not exists(select * from course where course.cid = cid) then
         set s = 2;
     end if;
     if s = 0 then
         set state = 0;
-        delete from class where class.cid = cid;
+        delete from course where course.cid = cid;
         delete from course_taught where course_taught.cid = cid;
         commit;
     else
@@ -319,7 +318,7 @@ begin
     declare s int default 0;
     declare continue handler for sqlexception set s = 1;
     start transaction;
-    if not exists(select * from class where class.cid = cid) then
+    if not exists(select * from course where course.cid = cid) then
         set s = 2;
     end if;
     if not exists(select * from teacher where teacher.tid = tid) then

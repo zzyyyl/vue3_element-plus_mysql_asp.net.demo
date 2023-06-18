@@ -1,7 +1,7 @@
 # ---------- TESTDATA ----------
-insert into class value("c1", "数据库系统概论", 60, 1);
-insert into class value("c2", "形式化方法", 40, 2);
-insert into class value("c3", "人工智能基础", 60, 1);
+insert into course value("c1", "数据库系统概论", 60, 1);
+insert into course value("c2", "形式化方法", 40, 2);
+insert into course value("c3", "人工智能基础", 60, 1);
 
 insert into teacher value('t1', '张三', '1', '6');
 insert into teacher value('t2', '张四', '2', '4');

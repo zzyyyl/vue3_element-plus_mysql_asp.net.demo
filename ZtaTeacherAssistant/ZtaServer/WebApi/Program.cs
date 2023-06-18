@@ -4,6 +4,9 @@ using Newtonsoft.Json.Linq;
 using System.Data;
 using WebApi.Tables;
 using System.Linq;
+using System.IO;
+using System.Security.Cryptography;
+using System.Xml.Linq;
 
 const int MaxSqlResultLength = 100;
 
@@ -667,6 +670,105 @@ app.MapPost("/project/detail/{jid}", async ([FromRoute] string jid, [FromBody] P
 
     await sqlTrans.CommitAsync();
     return Results.Ok();
+});
+
+#endregion
+
+#region course
+static async Task<List<Course>?> GetCourse(
+    MySqlConnection sqlConn,
+    string? cid = null, string? cname = null, int? chour = null, int? cnature = null,
+    string? orderby = null, bool? desc = null, int? limit = null)
+{
+    limit ??= 30;
+    var sqlQueryStr = "Select * from course";
+
+    var wheres = new List<string>();
+    if (cid != null) wheres.Add($"cid='{cid}'");
+    if (cname != null) wheres.Add($"cname like '%{cname}%'");
+    if (chour != null) wheres.Add($"chour={chour}");
+    if (cnature != null) wheres.Add($"cnature={cnature}");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    sqlQueryStr += $" order by {orderby ?? "cid"}";
+    if (desc ?? false) sqlQueryStr += " desc";
+    sqlQueryStr += $" limit {Math.Max(Math.Min(limit ?? 0, MaxSqlResultLength), 0)}";
+
+    try
+    {
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var courses = new List<Course>();
+        using (var reader = await sqlCommand.ExecuteReaderAsync())
+        {
+            while (reader.Read())
+            {
+                courses.Add(new Course
+                {
+                    Cid = reader.GetString("cid"),
+                    Cname = reader.GetString("cname"),
+                    Chour = reader.GetInt32("chour"),
+                    Cnature = reader.GetInt32("cnature")
+                });
+            }
+        }
+        return courses;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+
+}
+
+app.MapGet("/course", async (
+    string? cid, string? cname, int? chour, int? cnature,
+    string? orderby, bool? desc, int? limit) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.NotFound();
+    }
+    var courses = await GetCourse(sqlConn, cid, cname, chour, cnature, orderby, desc, limit);
+
+    return courses is null ? Results.NotFound() : Results.Ok(courses);
+});
+app.MapGet("/course-taught/{cid}", async ([FromRoute] string cid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var courses = await GetCourse(sqlConn, cid);
+    if (courses is null) return Results.NotFound();
+    if (courses.Count != 1) return Results.BadRequest();
+
+    var sqlQueryStr = $"Select * from course_taught where cid='{cid}'";
+    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+
+    var course_taught = new List<CourseTaught>();
+    using var reader = await sqlCommand.ExecuteReaderAsync();
+    while (reader.Read())
+    {
+        course_taught.Add(new CourseTaught
+        {
+            Tid = reader.GetString("tid"),
+            Cid = reader.GetString("cid"),
+            Tyear = reader.GetInt32("tyear"),
+            Tterm = reader.GetInt32("tterm"),
+            Thour = reader.GetInt32("thour")
+        });
+    }
+    await reader.CloseAsync();
+    await sqlTrans.CommitAsync();
+    return Results.Ok(new CourseDetail(courses[0], course_taught));
 });
 
 #endregion
