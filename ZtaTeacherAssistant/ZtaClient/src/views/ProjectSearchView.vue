@@ -45,21 +45,21 @@ export default {
     }
   },
   methods: {
-    getProject(paper_params: iProjectParams) {
+    getProject(project_params: iProjectParams) {
       // get /api/project
       axios
         .get('/api/project', {
           params: {
-            jid: paper_params.jid || null,
-            jname: paper_params.jname || null,
-            jsource: paper_params.jsource || null,
-            jtype: paper_params.jtype || null,
-            jbudgets: paper_params.jbudgets || null,
-            styear: paper_params.styear || null,
-            edyear: paper_params.edyear || null,
-            orderby: paper_params.orderby || null,
-            desc: paper_params.desc || null,
-            limit: paper_params.limit || null
+            jid: project_params.jid || null,
+            jname: project_params.jname || null,
+            jsource: project_params.jsource || null,
+            jtype: project_params.jtype || null,
+            jbudgets: project_params.jbudgets || null,
+            styear: project_params.styear || null,
+            edyear: project_params.edyear || null,
+            orderby: project_params.orderby || null,
+            desc: project_params.desc || null,
+            limit: project_params.limit || null
           }
         })
         .then((res: any) => {
@@ -73,8 +73,8 @@ export default {
           })
         })
     },
-    postProject(paper_params: iProjectParams) {
-      const jid = paper_params.jid
+    postProject(project_params: iProjectParams) {
+      const jid = project_params.jid
       if (jid === null) {
         ElMessage.info({ showClose: true, message: '请输入项目编号', duration: 3000 })
         return
@@ -83,15 +83,15 @@ export default {
       axios
         .post('/api/project', {
           jid: jid ?? null,
-          jname: paper_params.jname || null,
-          jsource: paper_params.jsource || null,
-          jtype: paper_params.jtype || null,
-          jbudgets: paper_params.jbudgets || null,
-          styear: paper_params.styear || null,
-          edyear: paper_params.edyear || null
+          jname: project_params.jname || null,
+          jsource: project_params.jsource || null,
+          jtype: project_params.jtype || null,
+          jbudgets: project_params.jbudgets || null,
+          styear: project_params.styear || null,
+          edyear: project_params.edyear || null
         })
         .then(() => {
-          this.projects = [JSON.parse(JSON.stringify(paper_params))]
+          this.projects = [JSON.parse(JSON.stringify(project_params))]
           ElMessage.success({ showClose: true, message: `项目 ${jid} 登记成功`, duration: 1000 })
         })
         .catch((err: any) => {
