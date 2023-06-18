@@ -822,6 +822,42 @@ static async Task<List<CourseTaught>?> GetCourseTaught(
     }
 
 }
+static async Task<ResultMsg> PostCourseTaught(MySqlConnection sqlConn, string cid, List<CourseTaught> teachers)
+{
+    foreach (var teacher in teachers.Where(teacher => teacher.Cid != cid))
+        return new ResultMsg(-1, "different tid");
+    try
+    {
+        var sqlQueryStr = $"delete from course_taught where course_taught.cid='{cid}'";
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        await sqlCommand.ExecuteNonQueryAsync();
+    }
+    catch
+    {
+        return new ResultMsg(-1, "cannot delete outdated items");
+    }
+
+    foreach (var teacher in teachers)
+    {
+        var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = teacher.Tid, Direction = ParameterDirection.Input };
+        var para_cid = new MySqlParameter("?cid", MySqlDbType.String) { Value = cid, Direction = ParameterDirection.Input };
+        var para_tyear = new MySqlParameter("?tyear", MySqlDbType.Int32) { Value = teacher.Tyear, Direction = ParameterDirection.Input };
+        var para_tterm = new MySqlParameter("?tterm", MySqlDbType.Float) { Value = teacher.Tterm, Direction = ParameterDirection.Input };
+        var para_thour = new MySqlParameter("?thour", MySqlDbType.Float) { Value = teacher.Thour, Direction = ParameterDirection.Input };
+        var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+        var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "course_taught_insert", CommandType = CommandType.StoredProcedure };
+        sqlCommand.Parameters.Add(para_tid);
+        sqlCommand.Parameters.Add(para_cid);
+        sqlCommand.Parameters.Add(para_tyear);
+        sqlCommand.Parameters.Add(para_tterm);
+        sqlCommand.Parameters.Add(para_thour);
+        sqlCommand.Parameters.Add(para_out);
+        var exec_res = await sqlCommand.ExecuteNonQueryAsync();
+        if (Convert.ToInt32(para_out.Value) == 0 && exec_res == 1) continue;
+        return new ResultMsg(-1, $"cannot insert teacher {teacher.Tid}");
+    }
+    return new ResultMsg(0, "");
+}
 
 app.MapGet("/course", async (
     string? cid, string? cname, int? chour, int? cnature,
@@ -857,6 +893,21 @@ app.MapGet("/course-taught/{cid}", async ([FromRoute] string cid) =>
     }
     await sqlTrans.CommitAsync();
     return Results.Ok(new CourseDetail(courses[0], course_taught));
+});
+app.MapPost("/course-taught/{cid}", async ([FromRoute] string cid, [FromBody] List<CourseTaught> teachers) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var res = await PostCourseTaught(sqlConn, cid, teachers);
+    if (res.Result < 0)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(res);
+    }
+
+    await sqlTrans.CommitAsync();
+    return Results.Ok();
 });
 
 #endregion

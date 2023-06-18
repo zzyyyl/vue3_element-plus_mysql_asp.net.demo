@@ -332,20 +332,24 @@ create procedure course_taught_insert(in tid char(5), in cid char(255), in tyear
 begin
     declare s int default 0;
     declare continue handler for sqlexception set s = 1;
-    start transaction;
+    -- start transaction;
     if not exists(select * from course where course.cid = cid) then
         set s = 2;
     end if;
     if not exists(select * from teacher where teacher.tid = tid) then
         set s = 3;
     end if;
+    if exists(select * from course_taught where course_taught.tid = tid and course_taught.cid = cid) then
+        -- Ö÷¼üÖØ¸´
+        set s = 4;
+    end if;
     if s = 0 then
         set state = 0;
         insert into course_taught value(tid, cid, tyear, tterm, thour);
-        commit;
+        -- commit;
     else
         set state = s;
-        rollback;
+        -- rollback;
     end if;
 end //
 delimiter ;
