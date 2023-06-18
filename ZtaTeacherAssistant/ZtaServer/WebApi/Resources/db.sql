@@ -124,14 +124,29 @@ alter table publish_paper add constraint FK_PUBLISH__PUBLISH_P_PAPER foreign key
 
 
 -- # ---------- VIEWS ----------
--- drop view if exists publish_paper_with_author;
--- create view publish_paper_with_author as
--- select paper.pid, paper.pname, paper.psource, paper.pyear, paper.ptype, paper.level,
---        publish_paper.tid, publish_paper.ptrank, publish_paper.correspond,
---        teacher.tname, teacher.gender, teacher.title
--- from paper
--- left join publish_paper on publish_paper.pid = paper.pid
--- left join teacher on teacher.tid = publish_paper.tid;
+drop view if exists project_details;
+create view project_details as
+select project.jid, project_undertaken.tid, project_undertaken.jtrank, project_undertaken.jtbudget,
+       project.jname, project.jsource, project.jtype, project.jbudgets, project.styear, project.edyear
+from project_undertaken
+     inner join project
+     on project_undertaken.jid = project.jid;
+
+drop view if exists paper_details;
+create view paper_details as
+select paper.pid, publish_paper.tid, publish_paper.ptrank, publish_paper.correspond,
+       paper.pname, paper.psource, paper.pyear, paper.ptype, paper.level
+from publish_paper
+     inner join paper
+     on publish_paper.pid = paper.pid;
+
+drop view if exists course_details;
+create view course_details as
+select course.cid, course_taught.tid, course_taught.tyear, course_taught.tterm, course_taught.thour,
+       course.cname, course.chour, course.cnature
+from course_taught
+     inner join course
+     on course_taught.cid = course.cid;
 
 
 # ---------- PROCEDURES ----------

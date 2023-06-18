@@ -929,40 +929,62 @@ app.MapGet("/teacher", async (
     return teachers is null ? Results.NotFound() : Results.Ok(teachers);
 });
 
-app.MapGet("/teacher/detail/{tid}", async ([FromRoute] string tid) =>
+app.MapGet("/teacher/detail/{tid}", async ([FromRoute] string tid, int? styear, int? edyear) =>
 {
     var sqlConn = new MySqlConnection(sqlConnCommand);
     await sqlConn.OpenAsync();
     using var sqlTrans = sqlConn.BeginTransaction();
     var teacher = await GetTeacher(sqlConn, tid: tid);
-    if (teacher is null)
-    {
-        await sqlTrans.RollbackAsync();
-        return Results.NotFound();
-    }
-    if (teacher.Count != 1) return Results.BadRequest();
+    if (teacher?.Count != 1) return Results.BadRequest();
 
     var courses = await GetCourseTaught(sqlConn, tid: tid);
-    if (courses is null)
+    if (courses is null) return Results.NotFound();
+    List<TeacherDetailCourse> courses_detail = new() { };
+    foreach (var course in courses)
     {
-        await sqlTrans.RollbackAsync();
-        return Results.NotFound();
+        if (course.Tyear.HasValue)
+        {
+            if (styear.HasValue && styear > course.Tyear) continue;
+            if (edyear.HasValue && edyear < course.Tyear) continue;
+        }
+        var course_detail = await GetCourse(sqlConn, cid: course.Cid);
+        if (course_detail?.Count != 1) return Results.BadRequest();
+        courses_detail.Add(new TeacherDetailCourse(course, course_detail[0]));
     }
+
     var papers = await GetPublishPaper(sqlConn, tid: tid);
-    if (papers is null)
+    if (papers is null) return Results.NotFound();
+    List<TeacherDetailPaper> papers_detail = new() { };
+    foreach (var paper in papers)
     {
-        await sqlTrans.RollbackAsync();
-        return Results.NotFound();
+        var paper_detail = await GetPaper(sqlConn, pid: paper.Pid);
+        if (paper_detail?.Count != 1) return Results.BadRequest();
+        string? s_pyear = paper_detail[0].Pyear;
+        if (s_pyear is not null)
+        {
+            int? pyear = DateTime.Parse(s_pyear).Year;
+            if (styear.HasValue && styear > pyear) continue;
+            if (edyear.HasValue && edyear < pyear) continue;
+        }
+        papers_detail.Add(new TeacherDetailPaper(paper, paper_detail[0]));
     }
+
     var projects = await GetProjectUndertaken(sqlConn, tid: tid);
-    if (projects is null)
+    if (projects is null) return Results.NotFound();
+    List<TeacherDetailProject> projects_detail = new() { };
+    foreach (var project in projects)
     {
-        await sqlTrans.RollbackAsync();
-        return Results.NotFound();
+        var project_detail = await GetProject(sqlConn, jid: project.Jid);
+        if (project_detail?.Count != 1) return Results.BadRequest();
+        int? pstyear = project_detail[0].Styear ?? 0;
+        int? pedyear = project_detail[0].Edyear ?? 9999;
+        if (styear.HasValue && styear > pedyear) continue;
+        if (edyear.HasValue && edyear < pstyear) continue;
+        projects_detail.Add(new TeacherDetailProject(project, project_detail[0]));
     }
 
     await sqlTrans.CommitAsync();
-    return Results.Ok(new TeacherDetail(teacher[0], courses: courses, papers: papers, projects: projects));
+    return Results.Ok(new TeacherDetail(teacher[0], courses: courses_detail, papers: papers_detail, projects: projects_detail));
 });
 
 #endregion

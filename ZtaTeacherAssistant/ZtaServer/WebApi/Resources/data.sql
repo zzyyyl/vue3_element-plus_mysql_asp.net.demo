@@ -17,15 +17,15 @@ insert into project value('j1', 'project', 'ustc', 1, 10000, 2009, 2009);
 insert into project value('j2', 'project', 'ustc', 1, 5000, 2010, 2011);
 insert into project value('j3', 'project1', 'nju', 1, 15000, 2011, 2012);
 
-call course_taught_insert('t1', 'c3', 22, 1, 20, @s);
+call course_taught_insert('t1', 'c3', 2022, 1, 20, @s);
 select @s where @s != 0;
-call course_taught_insert('t2', 'c3', 22, 1, 40, @s);
+call course_taught_insert('t2', 'c3', 2022, 1, 40, @s);
 select @s where @s != 0;
-call course_taught_insert('t3', 'c1', 22, 2, 30, @s);
+call course_taught_insert('t3', 'c1', 2022, 2, 30, @s);
 select @s where @s != 0;
-call course_taught_insert('t4', 'c1', 22, 2, 30, @s);
+call course_taught_insert('t4', 'c1', 2022, 2, 30, @s);
 select @s where @s != 0;
-call course_taught_insert('t2', 'c2', 22, 1, 40, @s);
+call course_taught_insert('t2', 'c2', 2022, 1, 40, @s);
 select @s where @s != 0;
 
 call project_undertaken_insert('t1', 'j1', 1, 5000, @s);
