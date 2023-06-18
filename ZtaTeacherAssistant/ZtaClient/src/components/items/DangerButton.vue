@@ -42,9 +42,14 @@ const props = withDefaults(
       <el-button size="small" type="primary" @click="handleClick(true)">确 定</el-button>
     </div>
     <template #reference>
-      <el-button plain :type="type" @click="popoverVisible = true" :style="style">{{
-        label
-      }}</el-button>
+      <el-button
+        plain
+        :type="type"
+        @click="popoverVisible = true"
+        @blur="popoverVisible = false"
+        :style="style"
+        >{{ label }}</el-button
+      >
     </template>
   </el-popover>
 </template>
