@@ -66,6 +66,8 @@ create table project
    edyear               int,
    primary key (jid)
 );
+alter table project
+add constraint check_years check (styear <= edyear);
 
 /*==============================================================*/
 /* Table: project_undertaken                                    */
@@ -75,7 +77,7 @@ create table project_undertaken
    tid                  char(5) not null,
    jid                  char(255) not null,
    jtrank               int,
-   jtbudget             int,
+   jtbudget             float,
    primary key (tid, jid)
 );
 
@@ -214,34 +216,34 @@ begin
 end //
 delimiter ;
 
-drop procedure if exists publish_paper_del;
-delimiter //
-create procedure publish_paper_del(in pid int, in tid char(5), out state int)
-begin
-    declare s int default 0;
-    declare continue handler for sqlexception set s = 1;
-    start transaction;
-    if exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.tid = tid) then
-        set s = 2;
-    end if;
-    if s = 0 then
-        set state = 0;
-        delete from publish_paper where publish_paper.pid = pid and publish_paper.tid = tid;
-        commit;
-    else
-        set state = s;
-        rollback;
-    end if;
-end //
-delimiter ;
+-- drop procedure if exists publish_paper_del;
+-- delimiter //
+-- create procedure publish_paper_del(in pid int, in tid char(5), out state int)
+-- begin
+--     declare s int default 0;
+--     declare continue handler for sqlexception set s = 1;
+--     start transaction;
+--     if exists(select * from publish_paper where publish_paper.pid = pid and publish_paper.tid = tid) then
+--         set s = 2;
+--     end if;
+--     if s = 0 then
+--         set state = 0;
+--         delete from publish_paper where publish_paper.pid = pid and publish_paper.tid = tid;
+--         commit;
+--     else
+--         set state = s;
+--         rollback;
+--     end if;
+-- end //
+-- delimiter ;
 
 drop procedure if exists project_undertaken_insert;
 delimiter //
-create procedure project_undertaken_insert(in tid char(5), in jid char(255), in jtrank int, in jtbudget int, out state int)
+create procedure project_undertaken_insert(in tid char(5), in jid char(255), in jtrank int, in jtbudget float, out state int)
 begin
     declare s int default 0;
     declare continue handler for sqlexception set s = 1;
-    start transaction;
+    -- start transaction;
     if not exists(select * from teacher where teacher.tid = tid) then
         set s = 2;
     end if;
@@ -251,13 +253,17 @@ begin
     if exists(select * from project_undertaken where project_undertaken.tid = tid and project_undertaken.jtrank = jtrank) then
         set s = 4;
     end if;
+    if exists(select * from project_undertaken where project_undertaken.tid = tid and project_undertaken.jid = jid) then
+        -- Ö÷¼üÖØ¸´
+        set s = 5;
+    end if;
     if s = 0 then
         set state = 0;
         insert into project_undertaken value(tid, jid, jtrank, jtbudget);
-        commit;
+        -- commit;
     else
         set state = s;
-        rollback;
+        -- rollback;
     end if;
 end //
 delimiter ;
@@ -274,8 +280,8 @@ begin
     end if;
     if s = 0 then
         set state = 0;
-        delete from project where project.jid = jid;
         delete from project_undertaken where project_undertaken.jid = jid;
+        delete from project where project.jid = jid;
         commit;
     else
         set state = s;

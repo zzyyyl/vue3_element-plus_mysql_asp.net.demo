@@ -355,6 +355,322 @@ app.MapPost("/paper/detail/{pid}", async ([FromRoute] int pid, [FromBody] PaperD
 */
 #endregion
 
+#region project
+static async Task<List<Project>?> GetProject(
+    MySqlConnection sqlConn,
+    string? jid = null, string? jname = null, string? jsource = null, int? jtype = null, float? jbudgets = null,
+    DateTime? styear = null, DateTime? edyear = null,
+    string? orderby = null, bool? desc = null, int? limit = null)
+{
+    limit ??= 30;
+    var sqlQueryStr = "Select * from project";
+
+    var wheres = new List<string>();
+    if (jid != null) wheres.Add($"jid='{jid}'");
+    if (jname != null) wheres.Add($"jname like '%{jname}%'");
+    if (jsource != null) wheres.Add($"jsource like '%{jsource}%'");
+    if (jtype != null) wheres.Add($"jtype={jtype}");
+    if (jbudgets != null) wheres.Add($"jbudgets={jbudgets}");
+    if (styear != null) wheres.Add($"styear>='{styear}'");
+    if (edyear != null) wheres.Add($"edyear<='{edyear}'");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    sqlQueryStr += $" order by {orderby ?? "jid"}";
+    if (desc ?? false) sqlQueryStr += " desc";
+    sqlQueryStr += $" limit {Math.Max(Math.Min(limit ?? 0, MaxSqlResultLength), 0)}";
+
+    try
+    {
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var projects = new List<Project>();
+        using (var reader = await sqlCommand.ExecuteReaderAsync())
+        {
+            while (reader.Read())
+            {
+                projects.Add(new Project
+                {
+                    Jid = reader.GetString("jid"),
+                    Jname = reader.GetValue("jname") as string,
+                    Jsource = reader.GetValue("jsource") as string,
+                    Jtype = reader.GetValue("jtype") as int?,
+                    Jbudgets = reader.GetValue("jbudgets") as float?,
+                    Styear = reader.GetValue("styear") as int?,
+                    Edyear = reader.GetValue("edyear") as int?
+                });
+            }
+        }
+        return projects;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+}
+static async Task<ResultMsg> PostProject(MySqlConnection sqlConn, Project project)
+{
+    if (project.Jbudgets != 0) return new ResultMsg(-1, "jbudgets must be 0 when post");
+    string keys = "jid", values = $"{project.Jid}";
+    if (project.Jname != null) { keys += ",jname"; values += $",'{project.Jname}'"; }
+    if (project.Jsource != null) { keys += ",jsource"; values += $",'{project.Jsource}'"; }
+    if (project.Jtype != null) { keys += ",jtype"; values += $",{project.Jtype}"; }
+    if (project.Jbudgets != null) { keys += ",jbudgets"; values += $",{project.Jbudgets}"; }
+    if (project.Styear != null) { keys += ",styear"; values += $",{project.Styear}"; }
+    if (project.Edyear != null) { keys += ",edyear"; values += $",{project.Edyear}"; }
+    var sqlQueryStr = $"insert into project ({keys}) values ({values})";
+    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+    try
+    {
+        return new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
+    }
+    catch (Exception ex)
+    {
+        return new ResultMsg(-1, ex.Message);
+    }
+}
+static async Task<ResultMsg> DeleteProject(MySqlConnection sqlConn, int jid)
+{
+    var para_jid = new MySqlParameter("?jid", MySqlDbType.Int32) { Value = jid, Direction = ParameterDirection.Input };
+    var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+    var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "project_del", CommandType = CommandType.StoredProcedure };
+    sqlCommand.Parameters.Add(para_jid);
+    sqlCommand.Parameters.Add(para_out);
+    var exec_errno = await sqlCommand.ExecuteNonQueryAsync();
+    return new ResultMsg(Convert.ToInt32(para_out.Value) == 0 ? exec_errno : -1, "");
+
+}
+static async Task<ResultMsg> PutProject(MySqlConnection sqlConn, Project project, bool with_check = true)
+{
+    var sqlQueryStr = "update project set ";
+    var sets = new List<string>();
+    var jid = project.Jid;
+    if (jid is null) return new ResultMsg(-1, "jid must not be null");
+    if (with_check)
+    {
+        var preSqlQueryStr = $"select SUM(jtbudget) as sum from project_undertaken where jid='{jid}'";
+        var preSqlCommand = new MySqlCommand(preSqlQueryStr, sqlConn);
+        var jbudget_sum = Convert.ToDouble(await preSqlCommand.ExecuteScalarAsync());
+        if (Math.Abs(jbudget_sum - project.Jbudgets ?? 0) > 1e-4)
+            return new ResultMsg(-1, "jbudgets must be equal to the sum of jtbudget in project_undertaken");
+    }
+
+    var jname = project.Jname;
+    var jsource = project.Jsource;
+    var jtype = project.Jtype;
+    var jbudgets = project.Jbudgets;
+    var styear = project.Styear;
+    var edyear = project.Edyear;
+    if (jname is not null) sets.Add($"jname=\"{jname}\"");
+    if (jsource is not null) sets.Add($"jsource=\"{jsource}\"");
+    if (jtype is not null) sets.Add($"jtype={jtype}");
+    if (jbudgets is not null) sets.Add($"jbudgets={jbudgets}");
+    if (styear is not null) sets.Add($"styear={styear}");
+    if (edyear is not null) sets.Add($"edyear={edyear}");
+    if (sets.Count > 0)
+    {
+        sqlQueryStr += string.Join(", ", sets);
+        sqlQueryStr += $" where jid='{jid}'";
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        try
+        {
+            var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
+            return res;
+        }
+        catch (Exception ex)
+        {
+            return new ResultMsg(-1, ex.Message);
+        }
+    }
+    return new ResultMsg(-1, "update set is empty");
+}
+static async Task<ResultMsg> PostProjectUndertaken(MySqlConnection sqlConn, string jid, List<ProjectUndertaken> managers, bool with_check = true)
+{
+    foreach (var manager in managers.Where(manager => manager.Jid != jid))
+        return new ResultMsg(-1, "different jid");
+    if (with_check)
+    {
+        float jbudget_sum = 0;
+        foreach (var manager in managers)
+            jbudget_sum += manager.Jtbudget ?? 0;
+
+        var preSqlQueryStr = $"Select jbudgets from project where jid='{jid}'";
+        var preSqlCommand = new MySqlCommand(preSqlQueryStr, sqlConn);
+        var jbudgets = Convert.ToDouble(await preSqlCommand.ExecuteScalarAsync());
+        if (Math.Abs(jbudgets - jbudget_sum) > 1e-4)
+            return new ResultMsg(-1, "the sum of jtbudget must be equal to jbudgets in project");
+    }
+    try
+    {
+        var sqlQueryStr = $"delete from project_undertaken where project_undertaken.jid='{jid}'";
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        await sqlCommand.ExecuteNonQueryAsync();
+    }
+    catch
+    {
+        return new ResultMsg(-1, "cannot delete outdated items");
+    }
+
+    foreach (var manager in managers)
+    {
+        var para_tid = new MySqlParameter("?tid", MySqlDbType.String) { Value = manager.Tid, Direction = ParameterDirection.Input };
+        var para_jid = new MySqlParameter("?jid", MySqlDbType.String) { Value = jid, Direction = ParameterDirection.Input };
+        var para_jtrank = new MySqlParameter("?jtrank", MySqlDbType.Int32) { Value = manager.Jtrank, Direction = ParameterDirection.Input };
+        var para_jtbudget = new MySqlParameter("?jtbudget", MySqlDbType.Float) { Value = manager.Jtbudget, Direction = ParameterDirection.Input };
+        var para_out = new MySqlParameter("?state", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+        var sqlCommand = new MySqlCommand { Connection = sqlConn, CommandText = "project_undertaken_insert", CommandType = CommandType.StoredProcedure };
+        sqlCommand.Parameters.Add(para_tid);
+        sqlCommand.Parameters.Add(para_jid);
+        sqlCommand.Parameters.Add(para_jtrank);
+        sqlCommand.Parameters.Add(para_jtbudget);
+        sqlCommand.Parameters.Add(para_out);
+        var exec_res = await sqlCommand.ExecuteNonQueryAsync();
+        if (Convert.ToInt32(para_out.Value) == 0 && exec_res == 1) continue;
+        return new ResultMsg(-1, $"cannot insert manager {manager.Tid}");
+    }
+    return new ResultMsg(0, "");
+}
+
+app.MapPost("/project", async ([FromBody] Project project) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await PostProject(sqlConn, project);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+});
+app.MapDelete("/project", async (int jid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await DeleteProject(sqlConn, jid);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+});
+app.MapPut("/project", async ([FromBody] Project project) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.BadRequest(new ResultMsg(-1, "database connection failed"));
+    }
+    var res = await PutProject(sqlConn, project);
+    return res.Result >= 0 ? Results.Ok(res) : Results.BadRequest(res);
+});
+app.MapGet("/project", async (
+    string? jid, string? jname, string? jsource, int? jtype, int? jbudgets, DateTime? styear, DateTime? edyear,
+    string? orderby, bool? desc, int? limit) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.NotFound();
+    }
+    var projects = await GetProject(sqlConn, jid, jname, jsource, jtype, jbudgets, styear, edyear, orderby, desc, limit);
+
+    return projects is null ? Results.NotFound() : Results.Ok(projects);
+});
+
+app.MapGet("/project-undertaken/{jid}", async ([FromRoute] string jid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var projects = await GetProject(sqlConn, jid);
+    if (projects is null) return Results.NotFound();
+    if (projects.Count != 1) return Results.BadRequest();
+
+    var sqlQueryStr = $"Select * from project_undertaken where jid='{jid}'";
+    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+
+    var project_undertaken = new List<ProjectUndertaken>();
+    using var reader = await sqlCommand.ExecuteReaderAsync();
+    while (reader.Read())
+    {
+        project_undertaken.Add(new ProjectUndertaken
+        {
+            Tid = reader.GetString("tid"),
+            Jid = reader.GetString("jid"),
+            Jtrank = reader.GetInt32("jtrank"),
+            Jtbudget = reader.GetFloat("jtbudget")
+        });
+    }
+    await reader.CloseAsync();
+    await sqlTrans.CommitAsync();
+    return Results.Ok(new ProjectDetail(projects[0], project_undertaken));
+});
+app.MapPost("/project-undertaken/{jid}", async ([FromRoute] string jid, [FromBody] List<ProjectUndertaken> managers) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var res = await PostProjectUndertaken(sqlConn, jid, managers);
+    if (res.Result < 0)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(res);
+    }
+
+    await sqlTrans.CommitAsync();
+    return Results.Ok();
+});
+
+app.MapPost("/project/detail/{jid}", async ([FromRoute] string jid, [FromBody] ProjectDetail project_detail) =>
+{
+    var project = project_detail.Project;
+    var managers = project_detail.Managers;
+    float jbudget_sum = 0;
+    foreach (var manager in managers)
+        jbudget_sum += manager.Jtbudget ?? 0;
+    if (Math.Abs(jbudget_sum - project.Jbudgets ?? 0) > 1e-4)
+        return Results.BadRequest(new ResultMsg(-1, "jbudgets of project must be equal to the sum of jtbudget in managers"));
+
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+
+    var project_res = await PutProject(sqlConn, project, with_check:false);
+    if (project_res.Result < 0)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(project_res);
+    }
+
+    var res = await PostProjectUndertaken(sqlConn, jid, managers, with_check:false);
+    if (res.Result < 0)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.BadRequest(res);
+    }
+
+    await sqlTrans.CommitAsync();
+    return Results.Ok();
+});
+
+#endregion
+
 #region teacher
 app.MapPost("/teacher", async (string tid, string? tname, int? gender, int? title) =>
 {
@@ -389,7 +705,6 @@ app.MapPost("/teacher", async (string tid, string? tname, int? gender, int? titl
     }
 });
 #endregion
-
 
 app.Run();
 
