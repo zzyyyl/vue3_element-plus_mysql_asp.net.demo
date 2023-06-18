@@ -30,6 +30,14 @@ const router = createRouter({
       component: () => import('./views/ProjectDetailView.vue')
     },
     {
+      path: '/search/course',
+      component: () => import('./views/CourseSearchView.vue')
+    },
+    {
+      path: '/course/:cid',
+      component: () => import('./views/CourseDetailView.vue')
+    },
+    {
       path: '/search/teacher',
       component: () => {} //() => import("./components/blocks/TeacherBlock.vue"),
     }
