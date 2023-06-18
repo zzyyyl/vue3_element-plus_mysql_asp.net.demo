@@ -224,6 +224,44 @@ static async Task<ResultMsg> PostPublishPaper(MySqlConnection sqlConn, int pid, 
     }
     return new ResultMsg(0, "");
 }
+static async Task<List<PublishPaper>?> GetPublishPaper(
+    MySqlConnection sqlConn,
+    int? pid = null, string? tid = null)
+{
+    var sqlQueryStr = "Select * from publish_paper";
+
+    var wheres = new List<string>();
+    if (pid != null) wheres.Add($"pid={pid}");
+    if (tid != null) wheres.Add($"tid='{tid}'");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    try
+    {
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var publish_papers = new List<PublishPaper>();
+        using var reader = await sqlCommand.ExecuteReaderAsync();
+        while (reader.Read())
+        {
+            publish_papers.Add(new PublishPaper
+            {
+                Tid = reader.GetString("tid"),
+                Pid = reader.GetInt32("pid"),
+                Ptrank = reader.GetValue("ptrank") as int?,
+                Correspond = reader.GetValue("correspond") as bool?
+            });
+        }
+
+        return publish_papers;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+}
 
 app.MapPost("/paper", async ([FromBody] Paper paper) =>
 {
@@ -295,23 +333,12 @@ app.MapGet("/publish-paper/{pid}", async ([FromRoute] int pid) =>
 
     if (papers.Count != 1) return Results.BadRequest();
 
-    var sqlQueryStr = $"Select * from publish_paper where pid={pid}";
-    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
-
-    var publish_papers = new List<PublishPaper>();
-    using var reader = await sqlCommand.ExecuteReaderAsync();
-    while (reader.Read())
+    var publish_papers = await GetPublishPaper(sqlConn, pid: pid);
+    if (publish_papers is null)
     {
-        publish_papers.Add(new PublishPaper
-        {
-            Tid = reader.GetString("tid"),
-            Pid = reader.GetInt32("pid"),
-            Ptrank = reader.GetValue("ptrank") as int?,
-            Correspond = reader.GetValue("correspond") as bool?
-        });
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
     }
-    await reader.CloseAsync();
-    await sqlTrans.CommitAsync();
     return Results.Ok(new PaperDetail(papers[0], publish_papers));
 });
 app.MapPost("/publish-paper/{pid}", async ([FromRoute] int pid, [FromBody] List<PublishPaper> authors) =>
@@ -535,6 +562,45 @@ static async Task<ResultMsg> PostProjectUndertaken(MySqlConnection sqlConn, stri
     }
     return new ResultMsg(0, "");
 }
+static async Task<List<ProjectUndertaken>?> GetProjectUndertaken(
+    MySqlConnection sqlConn,
+    string? jid = null, string? tid = null)
+{
+    var sqlQueryStr = "Select * from project_undertaken";
+
+    var wheres = new List<string>();
+    if (jid != null) wheres.Add($"jid='{jid}'");
+    if (tid != null) wheres.Add($"tid='{tid}'");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    try
+    {
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+
+        var project_undertaken = new List<ProjectUndertaken>();
+        using var reader = await sqlCommand.ExecuteReaderAsync();
+        while (reader.Read())
+        {
+            project_undertaken.Add(new ProjectUndertaken
+            {
+                Tid = reader.GetString("tid"),
+                Jid = reader.GetString("jid"),
+                Jtrank = reader.GetInt32("jtrank"),
+                Jtbudget = reader.GetFloat("jtbudget")
+            });
+        }
+        await reader.CloseAsync();
+        return project_undertaken;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+}
 
 app.MapPost("/project", async ([FromBody] Project project) =>
 {
@@ -608,19 +674,12 @@ app.MapGet("/project-undertaken/{jid}", async ([FromRoute] string jid) =>
     var sqlQueryStr = $"Select * from project_undertaken where jid='{jid}'";
     var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
 
-    var project_undertaken = new List<ProjectUndertaken>();
-    using var reader = await sqlCommand.ExecuteReaderAsync();
-    while (reader.Read())
+    var project_undertaken = await GetProjectUndertaken(sqlConn, jid: jid);
+    if (project_undertaken is null)
     {
-        project_undertaken.Add(new ProjectUndertaken
-        {
-            Tid = reader.GetString("tid"),
-            Jid = reader.GetString("jid"),
-            Jtrank = reader.GetInt32("jtrank"),
-            Jtbudget = reader.GetFloat("jtbudget")
-        });
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
     }
-    await reader.CloseAsync();
     await sqlTrans.CommitAsync();
     return Results.Ok(new ProjectDetail(projects[0], project_undertaken));
 });
@@ -708,13 +767,53 @@ static async Task<List<Course>?> GetCourse(
                 courses.Add(new Course
                 {
                     Cid = reader.GetString("cid"),
-                    Cname = reader.GetString("cname"),
-                    Chour = reader.GetInt32("chour"),
-                    Cnature = reader.GetInt32("cnature")
+                    Cname = reader.GetValue("cname") as string,
+                    Chour = reader.GetValue("chour") as int?,
+                    Cnature = reader.GetValue("cnature") as int?
                 });
             }
         }
         return courses;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+        return null;
+    }
+
+}
+static async Task<List<CourseTaught>?> GetCourseTaught(
+    MySqlConnection sqlConn,
+    string? cid = null, string? tid = null)
+{
+    var sqlQueryStr = "Select * from course_taught";
+
+    var wheres = new List<string>();
+    if (cid != null) wheres.Add($"cid='{cid}'");
+    if (tid != null) wheres.Add($"tid='{tid}'");
+    if (wheres.Count > 0)
+    {
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
+    }
+    try
+    {
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var course_taught = new List<CourseTaught>();
+        using var reader = await sqlCommand.ExecuteReaderAsync();
+        while (reader.Read())
+        {
+            course_taught.Add(new CourseTaught
+            {
+                Tid = reader.GetString("tid"),
+                Cid = reader.GetString("cid"),
+                Tyear = reader.GetInt32("tyear"),
+                Tterm = reader.GetInt32("tterm"),
+                Thour = reader.GetInt32("thour")
+            });
+        }
+        await reader.CloseAsync();
+        return course_taught;
     }
     catch (Exception ex)
     {
@@ -750,23 +849,12 @@ app.MapGet("/course-taught/{cid}", async ([FromRoute] string cid) =>
     if (courses is null) return Results.NotFound();
     if (courses.Count != 1) return Results.BadRequest();
 
-    var sqlQueryStr = $"Select * from course_taught where cid='{cid}'";
-    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
-
-    var course_taught = new List<CourseTaught>();
-    using var reader = await sqlCommand.ExecuteReaderAsync();
-    while (reader.Read())
+    var course_taught = await GetCourseTaught(sqlConn, cid: cid);
+    if (course_taught is null)
     {
-        course_taught.Add(new CourseTaught
-        {
-            Tid = reader.GetString("tid"),
-            Cid = reader.GetString("cid"),
-            Tyear = reader.GetInt32("tyear"),
-            Tterm = reader.GetInt32("tterm"),
-            Thour = reader.GetInt32("thour")
-        });
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
     }
-    await reader.CloseAsync();
     await sqlTrans.CommitAsync();
     return Results.Ok(new CourseDetail(courses[0], course_taught));
 });
@@ -774,38 +862,109 @@ app.MapGet("/course-taught/{cid}", async ([FromRoute] string cid) =>
 #endregion
 
 #region teacher
-app.MapPost("/teacher", async (string tid, string? tname, int? gender, int? title) =>
+static async Task<List<Teacher>?> GetTeacher(
+    MySqlConnection sqlConn,
+    string? tid = null, string? tname = null, int? gender = null, int? title = null,
+    string? orderby = null, bool? desc = null, int? limit = null)
 {
-    string keys = "tid", values = $"\"{tid}\"";
-    if (tname is not null)
+    limit ??= 30;
+    var sqlQueryStr = "Select * from teacher";
+
+    var wheres = new List<string>();
+    if (tid != null) wheres.Add($"tid='{tid}'");
+    if (tname != null) wheres.Add($"tname='{tname}'");
+    if (gender != null) wheres.Add($"gender={gender}");
+    if (title != null) wheres.Add($"title={title}");
+    if (wheres.Count > 0)
     {
-        keys += ",tname";
-        values += $",\"{tname}\"";
+        sqlQueryStr += " where ";
+        sqlQueryStr += string.Join(" and ", wheres);
     }
-    if (gender is not null)
-    {
-        keys += ",gender";
-        values += $",{gender}";
-    }
-    if (title is not null)
-    {
-        keys += ",title";
-        values += $",{title}";
-    }
-    var sqlQueryStr = $"insert into teacher ({keys}) values ({values})";
-    var sqlConn = new MySqlConnection(sqlConnCommand);
-    await sqlConn.OpenAsync();
-    var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+    sqlQueryStr += $" order by {orderby ?? "tid"}";
+    if (desc ?? false) sqlQueryStr += " desc";
+    sqlQueryStr += $" limit {Math.Max(Math.Min(limit ?? 0, MaxSqlResultLength), 0)}";
+
     try
     {
-        var res = new ResultMsg(await sqlCommand.ExecuteNonQueryAsync(), "");
-        return res.Result == 1 ? Results.Ok(res) : Results.BadRequest(res);
+        var sqlCommand = new MySqlCommand(sqlQueryStr, sqlConn);
+        var teachers = new List<Teacher>();
+        using (var reader = await sqlCommand.ExecuteReaderAsync())
+        {
+            while (reader.Read())
+            {
+                teachers.Add(new Teacher
+                {
+                    Tid = reader.GetString("tid"),
+                    Tname = reader.GetValue("tname") as string,
+                    Gender = reader.GetValue("gender") as int?,
+                    Title = reader.GetValue("title") as int?
+                });
+            }
+        }
+        return teachers;
     }
     catch (Exception ex)
     {
-        return Results.BadRequest(new ResultMsg(-1, ex.Message));
+        Console.WriteLine(ex.Message);
+        return null;
     }
+
+}
+
+app.MapGet("/teacher", async (
+    string? tid, string? tname, int? gender, int? title,
+    string? orderby, bool? desc, int? limit) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    try
+    {
+        await sqlConn.OpenAsync();
+    }
+    catch
+    {
+        return Results.NotFound();
+    }
+    var teachers = await GetTeacher(sqlConn, tid, tname, gender, title, orderby, desc, limit);
+
+    return teachers is null ? Results.NotFound() : Results.Ok(teachers);
 });
+
+app.MapGet("/teacher/detail/{tid}", async ([FromRoute] string tid) =>
+{
+    var sqlConn = new MySqlConnection(sqlConnCommand);
+    await sqlConn.OpenAsync();
+    using var sqlTrans = sqlConn.BeginTransaction();
+    var teacher = await GetTeacher(sqlConn, tid: tid);
+    if (teacher is null)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
+    }
+    if (teacher.Count != 1) return Results.BadRequest();
+
+    var courses = await GetCourseTaught(sqlConn, tid: tid);
+    if (courses is null)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
+    }
+    var papers = await GetPublishPaper(sqlConn, tid: tid);
+    if (papers is null)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
+    }
+    var projects = await GetProjectUndertaken(sqlConn, tid: tid);
+    if (projects is null)
+    {
+        await sqlTrans.RollbackAsync();
+        return Results.NotFound();
+    }
+
+    await sqlTrans.CommitAsync();
+    return Results.Ok(new TeacherDetail(teacher[0], courses: courses, papers: papers, projects: projects));
+});
+
 #endregion
 
 app.Run();
